@@ -2,70 +2,31 @@
 
 import { MapPin, Truck, Package, Navigation, CheckCircle } from 'lucide-react';
 
-interface StepProps {
-  step: number;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  isLast?: boolean;
-}
-
-function Step({ step, icon, title, description, isLast }: StepProps) {
-  return (
-    <div className="flex gap-4">
-      {/* Step number and line */}
-      <div className="flex flex-col items-center">
-        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-bold text-base sm:text-lg">
-          {step}
-        </div>
-        {!isLast && (
-          <div className="w-0.5 h-full min-h-[40px] bg-gradient-to-b from-[var(--color-primary)]/40 to-[var(--color-primary)]/10 my-2" />
-        )}
-      </div>
-      
-      {/* Content */}
-      <div className="flex-1 pb-6">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-9 h-9 rounded-lg bg-[var(--landing-orange)]/10 flex items-center justify-center text-[var(--landing-orange)]">
-            {icon}
-          </div>
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
-            {title}
-          </h3>
-        </div>
-        <p className="text-gray-600 text-sm leading-relaxed ml-12">
-          {description}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 const STEPS = [
   {
-    icon: <MapPin className="w-5 h-5" />,
-    title: 'Enter Pickup & Drop Location',
-    description: 'Open the app, enter your pickup address and drop destination. Select the type of goods you want to deliver.',
+    icon: MapPin,
+    title: 'Enter pickup & drop',
+    description: 'Open the app, set your pickup address and destination.',
   },
   {
-    icon: <Truck className="w-5 h-5" />,
-    title: 'Choose Vehicle & Book',
-    description: 'Select from 2-wheeler, 3-wheeler, or 4-wheeler based on your cargo size. Confirm booking and make payment.',
+    icon: Truck,
+    title: 'Choose your vehicle',
+    description: 'Pick 2-wheeler, 3-wheeler, or mini-truck based on cargo size.',
   },
   {
-    icon: <Package className="w-5 h-5" />,
-    title: 'Driver Picks Up Goods',
-    description: 'A nearby driver accepts your request and arrives at pickup location. Hand over your goods securely.',
+    icon: Package,
+    title: 'Driver picks up goods',
+    description: 'A nearby driver arrives at your location. Hand over goods securely.',
   },
   {
-    icon: <Navigation className="w-5 h-5" />,
-    title: 'Track in Real-Time',
-    description: 'Track your delivery live on the map. Get updates as driver heads to the drop location.',
+    icon: Navigation,
+    title: 'Track in real-time',
+    description: 'Follow your delivery live on the map until it arrives.',
   },
   {
-    icon: <CheckCircle className="w-5 h-5" />,
-    title: 'Goods Delivered!',
-    description: 'Driver delivers goods at destination. You get confirmation and can rate your delivery experience.',
+    icon: CheckCircle,
+    title: 'Delivered',
+    description: 'Goods arrive at the destination. Get confirmation and receipt.',
   },
 ];
 
@@ -73,27 +34,50 @@ export default function Features() {
   return (
     <section
       id="features"
-      className="page-section w-full bg-white"
+      className="page-section w-full bg-[var(--landing-bg)]"
       aria-labelledby="features-heading"
     >
-      <div className="w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 xl:px-10">
-        <h2 id="features-heading" className="mb-2 text-center text-2xl font-bold text-gray-900 sm:mb-3 sm:text-3xl xl:text-4xl">
-          How it Works
+      <div className="w-full mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <h2 id="features-heading" className="text-2xl font-bold text-gray-900 sm:text-3xl tracking-tight">
+          How it works
         </h2>
-        <p className="text-center text-gray-500 mb-8 sm:mb-10 text-sm sm:text-base">
+        <p className="mt-2 text-gray-500 mb-10 sm:mb-12 text-sm sm:text-base">
           Book your delivery in 5 simple steps
         </p>
+
         <div className="mx-auto max-w-2xl">
-          {STEPS.map((s, i) => (
-            <Step 
-              key={s.title} 
-              step={i + 1} 
-              icon={s.icon}
-              title={s.title}
-              description={s.description}
-              isLast={i === STEPS.length - 1}
-            />
-          ))}
+          {STEPS.map((s, i) => {
+            const Icon = s.icon;
+            const isLast = i === STEPS.length - 1;
+            return (
+              <div key={s.title} className="flex gap-4">
+                {/* Step indicator */}
+                <div className="flex flex-col items-center">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-gray-900 text-white font-medium text-sm sm:h-11 sm:w-11">
+                    {i + 1}
+                  </div>
+                  {!isLast && (
+                    <div className="w-px flex-1 min-h-[32px] bg-gray-200 my-1.5" aria-hidden />
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className={`flex-1 ${isLast ? '' : 'pb-6'}`}>
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="grid h-8 w-8 place-items-center rounded-md bg-gray-100 text-gray-700">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-medium text-gray-900 sm:text-base">
+                      {s.title}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-gray-500 leading-relaxed ml-11">
+                    {s.description}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

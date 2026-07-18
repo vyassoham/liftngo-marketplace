@@ -7,11 +7,9 @@ import { trackSelectContent } from '@/lib/analytics';
 interface FaqAccordionListProps {
   items: readonly FaqItem[];
   className?: string;
-  /** GA4 scope for `select_content` (e.g. homepage_faq, contact_page). */
   analyticsScope?: string;
 }
 
-/** Shared FAQ accordion (homepage section + /faq page). */
 export default function FaqAccordionList({
   items,
   className = '',
@@ -20,38 +18,47 @@ export default function FaqAccordionList({
   const [openId, setOpenId] = useState<string | null>(null);
 
   return (
-    <div className={`w-full space-y-3 ${className}`}>
-      {items.map(({ id, question, answer }) => (
-        <div key={id} className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <button
-            type="button"
-            onClick={() => {
-              const next = openId === id ? null : id;
-              setOpenId(next);
-              if (next) {
-                trackSelectContent('faq_accordion', id, { page: analyticsScope });
-              }
-            }}
-            className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left font-medium text-gray-900 transition-colors hover:bg-gray-50 sm:px-5"
-          >
-            <span className="min-w-0 flex-1 break-words pr-2">{question}</span>
-            <svg
-              className={`h-5 w-5 shrink-0 text-gray-500 transition-transform ${openId === id ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden
+    <div className={`w-full space-y-2 ${className}`}>
+      {items.map(({ id, question, answer }) => {
+        const isOpen = openId === id;
+        return (
+          <div key={id} className="rounded-xl border border-gray-200 bg-white transition-colors hover:border-gray-300">
+            <button
+              type="button"
+              onClick={() => {
+                const next = isOpen ? null : id;
+                setOpenId(next);
+                if (next) {
+                  trackSelectContent('faq_accordion', id, { page: analyticsScope });
+                }
+              }}
+              className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-medium text-gray-900 transition-colors sm:text-base"
+              aria-expanded={isOpen}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          {openId === id && (
-            <div className="border-t border-gray-100 px-4 pb-4 pt-0 text-sm leading-relaxed break-words text-gray-600 sm:px-5">
-              {answer}
+              <span className="min-w-0 flex-1 pr-2">{question}</span>
+              <svg
+                className={`h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div
+              className="faq-answer-wrapper"
+              data-open={isOpen ? 'true' : 'false'}
+            >
+              <div className="faq-answer-inner">
+                <div className="px-5 pb-4 text-sm leading-relaxed text-gray-500 sm:text-base">
+                  {answer}
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

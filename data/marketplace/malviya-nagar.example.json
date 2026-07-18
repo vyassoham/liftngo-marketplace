@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1.0",
+  "marketplaceId": "malviya-nagar-jaipur",
+  "name": "Malviya Nagar Marketplace",
+  "slug": "malviya-nagar",
+  "locality": "Malviya Nagar",
+  "city": "Jaipur",
+  "state": "Rajasthan",
+  "status": "ACTIVE",
+  "businessCategories": [
+    {
+      "id": "food",
+      "name": "Food",
+      "slug": "food",
+      "description": "Restaurants, cafes, and food outlets",
+      "icon": "🍔",
+      "order": 1
+    },
+    {
+      "id": "cafes",
+      "name": "Cafés",
+      "slug": "cafes",
+      "description": "Coffee shops and bakeries",
+      "icon": "☕",
+      "order": 2
+    },
+    {
+      "id": "clothing",
+      "name": "Clothing",
+      "slug": "clothing",
+      "description": "Fashion apparel and accessories",
+      "icon": "👔",
+      "order": 3
+    },
+    {
+      "id": "jewellery",
+      "name": "Jewellery",
+      "slug": "jewellery",
+      "description": "Gold, silver, and fashion jewellery",
+      "icon": "💎",
+      "order": 4
+    }
+  ],
+  "supportedStoreIds": [
+    "store-spice-kitchen",
+    "store-fashion-boutique",
+    "store-royal-jewellers",
+    "store-brew-house"
+  ],
+  "rolloutCohorts": {
+    "pilot": ["store-spice-kitchen", "store-fashion-boutique", "store-royal-jewellers"],
+    "wave_1": ["store-brew-house"],
+    "wave_2": [],
+    "wave_3": []
+  }
+}

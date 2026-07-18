@@ -1,10 +1,10 @@
 import { forwardRef, type HTMLAttributes } from 'react';
 
 const variants = {
-  default: 'border border-stone-200/90 bg-white shadow-sm shadow-stone-900/[0.04]',
-  elevated: 'border border-stone-200/60 bg-white shadow-md shadow-stone-900/[0.06]',
-  ghost: 'border border-transparent bg-stone-50/80',
-  khatu: 'border border-amber-200/50 bg-[var(--khatu-ivory)] shadow-md shadow-amber-900/[0.06]',
+  default: 'border border-gray-200 bg-white shadow-[var(--shadow-card)]',
+  elevated: 'border border-gray-100 bg-white shadow-[var(--shadow-elevated)]',
+  ghost: 'border border-transparent bg-gray-50',
+  khatu: 'border border-amber-200/50 bg-[var(--khatu-ivory)] shadow-[var(--shadow-card)]',
 } as const;
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
@@ -18,7 +18,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
   return (
     <div
       ref={ref}
-      className={`rounded-2xl ${variants[variant]} ${className}`.trim()}
+      className={`rounded-lg ${variants[variant]} ${className}`.trim()}
       {...props}
     />
   );

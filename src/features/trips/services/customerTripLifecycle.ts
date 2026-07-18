@@ -2,11 +2,9 @@
 
 import { API_PATHS } from '@/api/endpoints';
 import apiClient from '@/api/client';
-import { customerEventEngine } from '@/services/customerEventEngine';
-import { socketService } from '@/services/socket';
-import { useCustomerTripStore } from '@/store/customerTripStore';
-import { mapTripStatus } from '@/store/customerTripStore';
-import { type CustomerSocketEventPayload, CustomerTripStatus, type Trip } from '@/types/customerTrip';
+import { customerEventEngine } from './customerEventEngine';
+import { socketService } from './socket';
+import { useTripStore, TripStatus, mapTripStatus } from '../store/tripStore';
 
 const TAB_LOCK_KEY = 'liftngo_ws_customer_leader';
 const TAB_LOCK_TTL_MS = 5000;
@@ -61,8 +59,49 @@ class CustomerTripLifecycle {
   async syncActiveTrip(): Promise<void> {
     if (!this.userId || typeof window === 'undefined') return;
     try {
-      const activeTrip = await apiClient.get<Trip | null>(API_PATHS.tripsActive);
-      useCustomerTripStore.getState().hydrateFromServer(activeTrip);
+      const activeTrip = await apiClient.get<any>(API_PATHS.tripsActive);
+      
+      let mappedTrip = null;
+      let mappedDriver = null;
+      if (activeTrip) {
+        mappedTrip = {
+          id: activeTrip.id,
+          status: mapTripStatus(activeTrip.status),
+          pickup: {
+            lat: activeTrip.originLatitude,
+            lng: activeTrip.originLongitude,
+            address: activeTrip.originAddress,
+          },
+          drop: {
+            lat: activeTrip.destinationLatitude,
+            lng: activeTrip.destinationLongitude,
+            address: activeTrip.destinationAddress,
+          },
+          fare: activeTrip.totalAmount || activeTrip.estimatedFare,
+          distance: activeTrip.distanceMeters,
+          duration: activeTrip.durationSeconds,
+          createdAt: activeTrip.createdAt,
+          updatedAt: activeTrip.updatedAt,
+        };
+        
+        if (activeTrip.driverId) {
+          mappedDriver = activeTrip.driver ? {
+            id: activeTrip.driver.id,
+            name: activeTrip.driver.name || '',
+            phone: activeTrip.driver.mobile || '',
+            photo: activeTrip.driver.photo,
+            rating: activeTrip.driver.rating || undefined,
+            vehicleNumber: activeTrip.driver.vehicleNumber || undefined,
+            vehicleType: activeTrip.driver.vehicleType || undefined,
+          } : {
+            id: activeTrip.driverId,
+            name: 'Driver',
+            phone: '',
+          };
+        }
+      }
+      
+      useTripStore.getState().hydrateFromServer(mappedTrip, mappedDriver);
       this.broadcastState();
       if (!activeTrip || !this.isLeader) return;
 
@@ -70,14 +109,35 @@ class CustomerTripLifecycle {
       if (!socket) return;
       socket.emit('join:trip', { tripId: activeTrip.id, role: 'customer' });
     } catch {
-      // Keep stale UI state on fetch failure and rely on next reconnect cycle.
+      // Keep stale UI state
     }
   }
 
-  markTripCreated(trip: Trip): void {
-    const store = useCustomerTripStore.getState();
-    store.startSearching({ ...trip, status: CustomerTripStatus.SEARCHING });
-    store.updateStatus(CustomerTripStatus.SEARCHING, Date.now());
+  markTripCreated(trip: any): void {
+    const store = useTripStore.getState();
+    
+    const mappedTrip = {
+      id: trip.id,
+      status: TripStatus.SEARCHING,
+      pickup: {
+        lat: trip.originLatitude ?? trip.pickup?.lat,
+        lng: trip.originLongitude ?? trip.pickup?.lng,
+        address: trip.originAddress ?? trip.pickup?.address,
+      },
+      drop: {
+        lat: trip.destinationLatitude ?? trip.drop?.lat,
+        lng: trip.destinationLongitude ?? trip.drop?.lng,
+        address: trip.destinationAddress ?? trip.drop?.address,
+      },
+      fare: trip.totalAmount || trip.estimatedFare || trip.fare,
+      distance: trip.distanceMeters || trip.distance,
+      duration: trip.durationSeconds || trip.duration,
+      createdAt: trip.createdAt || new Date().toISOString(),
+      updatedAt: trip.updatedAt || new Date().toISOString(),
+    };
+    
+    store.startSearch(mappedTrip);
+    store.updateStatus(TripStatus.SEARCHING, Date.now());
     this.broadcastState();
     if (!this.isLeader || !trip.id) return;
     socketService.instance?.emit('join:trip', { tripId: trip.id, role: 'customer' });
@@ -89,7 +149,7 @@ class CustomerTripLifecycle {
     if (!socket) return;
 
     EVENTS.forEach((eventName) => {
-      const handler = (payload: CustomerSocketEventPayload) => {
+      const handler = (payload: any) => {
         customerEventEngine.handleEvent(eventName, payload);
         this.broadcastState();
       };
@@ -98,7 +158,7 @@ class CustomerTripLifecycle {
     });
 
     const unsubscribe = socketService.onConnectionStateChange((state) => {
-      useCustomerTripStore.getState().setConnectionState(state);
+      useTripStore.getState().setConnectionState(state);
       if (state === 'CONNECTED') void this.syncActiveTrip();
       this.broadcastState();
     });
@@ -203,11 +263,10 @@ function readLock(): TabLock | null {
 }
 
 function getSerializableState() {
-  const state = useCustomerTripStore.getState();
+  const state = useTripStore.getState();
   return {
     currentTrip: state.currentTrip,
-    tripStatus: state.tripStatus,
-    isSearching: state.isSearching,
+    status: state.status,
     driver: state.driver,
     driverLocation: state.driverLocation,
     lastEventTimestamp: state.lastEventTimestamp,
@@ -216,23 +275,23 @@ function getSerializableState() {
 }
 
 function applyBroadcastState(payload: ReturnType<typeof getSerializableState>): void {
-  const store = useCustomerTripStore.getState();
+  const store = useTripStore.getState();
   if (!payload.currentTrip) {
     store.resetTrip();
     store.setConnectionState(payload.connectionState);
     return;
   }
 
-  store.hydrateFromServer({
-    ...payload.currentTrip,
-    status: mapTripStatus(payload.tripStatus),
-  });
-  store.assignDriver(payload.driver);
+  store.hydrateFromServer(
+    payload.currentTrip,
+    payload.driver
+  );
   if (payload.driverLocation) {
-    store.updateLocation(payload.driverLocation);
+    store.updateDriverLocation(payload.driverLocation);
   }
-  store.updateStatus(payload.tripStatus, payload.lastEventTimestamp || Date.now());
+  store.updateStatus(payload.status, payload.lastEventTimestamp || Date.now());
   store.setConnectionState(payload.connectionState);
 }
 
 export const customerTripLifecycle = new CustomerTripLifecycle();
+export default customerTripLifecycle;

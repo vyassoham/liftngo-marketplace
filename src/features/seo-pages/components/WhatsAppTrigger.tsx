@@ -16,7 +16,7 @@ export function WhatsAppTrigger({
   whatsappLink,
   pageSlug,
   showAfterSeconds = 5,
-  position = 'bottom-right',
+  position = 'bottom-left',
 }: WhatsAppTriggerProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isPulsing, setIsPulsing] = useState(false);

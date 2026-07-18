@@ -1,0 +1,389 @@
+{
+  "schemaVersion": "1.0",
+  "storeId": "store-spice-kitchen",
+  "slug": "spice-kitchen",
+  "status": "ACTIVE",
+  "featured": true,
+  "businessCategoryIds": ["food"],
+  
+  "identity": {
+    "name": "Spice Kitchen",
+    "shortName": "Spice Kitchen",
+    "tagline": "Authentic Rajasthani Cuisine",
+    "usp": "Traditional recipes with modern presentation",
+    "description": "Spice Kitchen brings the authentic flavors of Rajasthan to your doorstep. Our chefs use traditional cooking methods passed down through generations, combined with fresh, locally-sourced ingredients. From dal baati churma to gatte ki sabzi, experience the true taste of Rajasthan.",
+    "logoUrl": "https://example.com/images/stores/spice-kitchen/logo.png",
+    "bannerUrl": "https://example.com/images/stores/spice-kitchen/banner.jpg",
+    "thumbnailUrl": "https://example.com/images/stores/spice-kitchen/thumb.jpg"
+  },
+  
+  "theme": {
+    "layout": "MODERN",
+    "accentColor": "#FF6B35",
+    "backgroundColor": "#FFFFFF",
+    "textColor": "#1F2937",
+    "buttonStyle": "ROUNDED",
+    "showLiftngoHeaderBadge": true,
+    "showLiftngoFooter": true
+  },
+  
+  "publicContact": {
+    "storePhone": "9876543210",
+    "storeHelpline": "9876543211",
+    "supportPhone": "7891880088",
+    "email": "spicekitchen@example.com"
+  },
+  
+  "legal": {
+    "legalBusinessName": "Spice Kitchen Restaurant Pvt Ltd",
+    "gstin": "08AABCU9603R1ZN",
+    "applicableLicenceNumbers": ["FSSAI-1234567890"],
+    "showGstin": true,
+    "showLicenceNumbers": true
+  },
+  
+  "location": {
+    "displayAddress": "Shop 12, Malviya Nagar Market, Jaipur - 302017",
+    "addressLine1": "Shop 12, Malviya Nagar Market",
+    "addressLine2": "Near Central Park",
+    "landmark": "Opposite HDFC Bank",
+    "city": "Jaipur",
+    "state": "Rajasthan",
+    "postalCode": "302017",
+    "latitude": 26.9124,
+    "longitude": 75.7873,
+    "mapUrl": "https://maps.google.com/?q=26.9124,75.7873",
+    "serviceAreaKm": 5
+  },
+  
+  "operations": {
+    "acceptingOrders": true,
+    "orderMode": "BOTH",
+    "averagePreparationMinutes": 25,
+    "minimumOrderAmount": 200,
+    "maximumOrderAmount": 5000,
+    "inventoryMode": "REALTIME",
+    "autoAcceptOrders": false,
+    "merchantConfirmationSlaSeconds": 120
+  },
+  
+  "businessHours": [
+    {
+      "dayOfWeek": 0,
+      "openTime": "10:00",
+      "closeTime": "22:00",
+      "isClosed": false
+    },
+    {
+      "dayOfWeek": 1,
+      "openTime": "10:00",
+      "closeTime": "22:00",
+      "isClosed": false
+    },
+    {
+      "dayOfWeek": 2,
+      "openTime": "10:00",
+      "closeTime": "22:00",
+      "isClosed": false
+    },
+    {
+      "dayOfWeek": 3,
+      "openTime": "10:00",
+      "closeTime": "22:00",
+      "isClosed": false
+    },
+    {
+      "dayOfWeek": 4,
+      "openTime": "10:00",
+      "closeTime": "22:00",
+      "isClosed": false
+    },
+    {
+      "dayOfWeek": 5,
+      "openTime": "10:00",
+      "closeTime": "23:00",
+      "isClosed": false
+    },
+    {
+      "dayOfWeek": 6,
+      "openTime": "10:00",
+      "closeTime": "23:00",
+      "isClosed": false
+    }
+  ],
+  
+  "delivery": {
+    "provider": "LIFTNGO",
+    "deliveryType": "STANDARD",
+    "packageType": "FOOD",
+    "defaultWeightKg": 1,
+    "customerPaysDelivery": true,
+    "freeDeliveryThreshold": 500,
+    "deliveryInstructions": "Handle food items with care. Keep hot items separate from cold items."
+  },
+  
+  "offers": [
+    {
+      "id": "offer-first-order-20",
+      "title": "20% Off First Order",
+      "description": "Get 20% discount on your first order",
+      "type": "PERCENTAGE",
+      "value": 20,
+      "minOrderAmount": 200,
+      "maxDiscountAmount": 100,
+      "validFrom": "2024-01-01T00:00:00Z",
+      "validUntil": "2024-12-31T23:59:59Z",
+      "applicableCategories": [],
+      "applicableProducts": [],
+      "maxUses": 1000,
+      "currentUses": 150
+    }
+  ],
+  
+  "catalogue": {
+    "categories": [
+      {
+        "id": "cat-main-course",
+        "name": "Main Course",
+        "slug": "main-course",
+        "description": "Traditional Rajasthani main dishes",
+        "order": 1,
+        "icon": "🍛"
+      },
+      {
+        "id": "cat-starters",
+        "name": "Starters",
+        "slug": "starters",
+        "description": "Appetizers and snacks",
+        "order": 2,
+        "icon": "🥗"
+      },
+      {
+        "id": "cat-breads",
+        "name": "Breads",
+        "slug": "breads",
+        "description": "Fresh Indian breads",
+        "order": 3,
+        "icon": "🫓"
+      },
+      {
+        "id": "cat-desserts",
+        "name": "Desserts",
+        "slug": "desserts",
+        "description": "Sweet treats",
+        "order": 4,
+        "icon": "🍮"
+      }
+    ],
+    
+    "products": [
+      {
+        "id": "prod-dal-baati",
+        "slug": "dal-baati-churma",
+        "categoryId": "cat-main-course",
+        "name": "Dal Baati Churma",
+        "description": "Rajasthan's signature dish - lentils with baked wheat balls and sweet crumbled bread",
+        "images": [
+          "https://example.com/images/products/dal-baati-1.jpg",
+          "https://example.com/images/products/dal-baati-2.jpg"
+        ],
+        "pricing": {
+          "originalPrice": 280,
+          "sellingPrice": 250,
+          "taxPercentage": 5,
+          "taxInclusive": true
+        },
+        "variants": [
+          {
+            "id": "var-dal-baati-full",
+            "name": "Full Plate (Serves 2)",
+            "price": 250,
+            "originalPrice": 280,
+            "available": true,
+            "stockCount": 20
+          },
+          {
+            "id": "var-dal-baati-half",
+            "name": "Half Plate (Serves 1)",
+            "price": 140,
+            "originalPrice": 160,
+            "available": true,
+            "stockCount": 30
+          }
+        ],
+        "inventory": {
+          "inStock": true,
+          "stockCount": 50,
+          "maxOrderQuantity": 10,
+          "lowStockThreshold": 5
+        },
+        "preparation": {
+          "minutes": 30
+        },
+        "tags": ["signature", "traditional", "spicy"],
+        "status": "ACTIVE",
+        "featured": true,
+        "recommended": true
+      },
+      {
+        "id": "prod-gatte-ki-sabzi",
+        "slug": "gatte-ki-sabzi",
+        "categoryId": "cat-main-course",
+        "name": "Gatte ki Sabzi",
+        "description": "Gram flour dumplings in spicy yogurt gravy",
+        "images": [
+          "https://example.com/images/products/gatte-ki-sabzi-1.jpg"
+        ],
+        "pricing": {
+          "originalPrice": 180,
+          "sellingPrice": 160,
+          "taxPercentage": 5,
+          "taxInclusive": true
+        },
+        "inventory": {
+          "inStock": true,
+          "stockCount": 25,
+          "maxOrderQuantity": 10,
+          "lowStockThreshold": 5
+        },
+        "preparation": {
+          "minutes": 25
+        },
+        "tags": ["traditional", "vegetarian"],
+        "status": "ACTIVE",
+        "featured": false,
+        "recommended": true
+      },
+      {
+        "id": "prod-paneer-tikka",
+        "slug": "paneer-tikka",
+        "categoryId": "cat-starters",
+        "name": "Paneer Tikka",
+        "description": "Grilled cottage cheese marinated in spices",
+        "images": [
+          "https://example.com/images/products/paneer-tikka-1.jpg"
+        ],
+        "pricing": {
+          "originalPrice": 220,
+          "sellingPrice": 200,
+          "taxPercentage": 5,
+          "taxInclusive": true
+        },
+        "addOns": [
+          {
+            "groupId": "addon-extra-cheese",
+            "groupName": "Extra Cheese",
+            "type": "SINGLE",
+            "required": false,
+            "minSelection": 0,
+            "maxSelection": 1,
+            "options": [
+              {
+                "id": "opt-extra-cheese-yes",
+                "name": "Add Extra Cheese (+₹30)",
+                "price": 30,
+                "available": true,
+                "stockCount": 50
+              }
+            ]
+          }
+        ],
+        "inventory": {
+          "inStock": true,
+          "stockCount": 15,
+          "maxOrderQuantity": 5,
+          "lowStockThreshold": 3
+        },
+        "preparation": {
+          "minutes": 20
+        },
+        "tags": ["starter", "spicy", "popular"],
+        "status": "ACTIVE",
+        "featured": true,
+        "recommended": false
+      },
+      {
+        "id": "prod-roti",
+        "slug": "tandoori-roti",
+        "categoryId": "cat-breads",
+        "name": "Tandoori Roti",
+        "description": "Fresh clay-oven baked bread",
+        "images": [
+          "https://example.com/images/products/roti-1.jpg"
+        ],
+        "pricing": {
+          "originalPrice": 15,
+          "sellingPrice": 12,
+          "taxPercentage": 0,
+          "taxInclusive": true
+        },
+        "inventory": {
+          "inStock": true,
+          "stockCount": 100,
+          "maxOrderQuantity": 20,
+          "lowStockThreshold": 10
+        },
+        "preparation": {
+          "minutes": 10
+        },
+        "tags": ["bread", "essential"],
+        "status": "ACTIVE",
+        "featured": false,
+        "recommended": false
+      },
+      {
+        "id": "prod-ghevar",
+        "slug": "ghevar",
+        "categoryId": "cat-desserts",
+        "name": "Ghevar",
+        "description": "Traditional Rajasthani sweet disc soaked in sugar syrup",
+        "images": [
+          "https://example.com/images/products/ghevar-1.jpg"
+        ],
+        "pricing": {
+          "originalPrice": 180,
+          "sellingPrice": 160,
+          "taxPercentage": 5,
+          "taxInclusive": true
+        },
+        "inventory": {
+          "inStock": true,
+          "stockCount": 20,
+          "maxOrderQuantity": 5,
+          "lowStockThreshold": 5
+        },
+        "preparation": {
+          "minutes": 15
+        },
+        "tags": ["dessert", "traditional", "sweet"],
+        "status": "ACTIVE",
+        "featured": true,
+        "recommended": true
+      }
+    ]
+  },
+  
+  "recommendations": {
+    "featuredProductIds": ["prod-dal-baati", "prod-paneer-tikka", "prod-ghevar"],
+    "cartRecommendationRules": [
+      {
+        "productId": "prod-dal-baati",
+        "recommendedProductIds": ["prod-roti", "prod-ghevar"],
+        "condition": "COMPLEMENTARY"
+      }
+    ]
+  },
+  
+  "seo": {
+    "pageTitle": "Spice Kitchen - Authentic Rajasthani Food | Malviya Nagar",
+    "metaDescription": "Order authentic Rajasthani cuisine from Spice Kitchen in Malviya Nagar, Jaipur. Dal Baati Churma, Gatte ki Sabzi, and more. Delivery by Liftngo.",
+    "keywords": ["Spice Kitchen", "Rajasthani food", "Malviya Nagar", "Jaipur", "Dal Baati Churma", "Ghevar"],
+    "ogImage": "https://example.com/images/stores/spice-kitchen/og-image.jpg"
+  },
+  
+  "analytics": {
+    "campaignCode": "MALVIYA_NAGAR_LAUNCH",
+    "source": "marketplace",
+    "merchantCohort": "pilot"
+  }
+}

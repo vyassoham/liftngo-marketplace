@@ -58,6 +58,10 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "plus.unsplash.com", pathname: "/**" },
       { protocol: "https", hostname: "media.unsplash.com", pathname: "/**" },
       { protocol: "https", hostname: "picsum.photos", pathname: "/**" },
+      // Supabase Storage (for store banners, logos, product images)
+      { protocol: "https", hostname: "*.supabase.co", pathname: "/**" },
+      { protocol: "https", hostname: "*.supabase.in", pathname: "/**" },
+      { protocol: "https", hostname: "cjsxbvnkzivddpeqrijx.supabase.co", pathname: "/**" },
     ],
   },
   async headers() {

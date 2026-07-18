@@ -12,3 +12,5 @@ export { tripService } from './services/tripService';
 
 // Hooks
 export { useTrip } from './hooks/useTrip';
+export { useCustomerTripRealtime } from './hooks/useCustomerTripRealtime';
+

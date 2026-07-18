@@ -13,32 +13,32 @@ import { META_TITLE, SITE_DESCRIPTION, SEO_KEYWORDS } from '@/lib/site';
 const sectionLoading = (minH: string) => () => <div className={`${minH} w-full shrink-0`} aria-hidden />;
 
 const HomeSeoContent = dynamic(() => import('@/components/landing/HomeSeoContent'), {
-  loading: sectionLoading('min-h-48'),
+  loading: sectionLoading('min-h-32'),
 });
 const HomeDeepAuthoritySection = dynamic(() => import('@/components/landing/HomeDeepAuthoritySection'), {
-  loading: sectionLoading('min-h-64'),
+  loading: sectionLoading('min-h-48'),
 });
 const Features = dynamic(() => import('@/components/landing/Features'), { loading: sectionLoading('min-h-40') });
 const ServiceSection = dynamic(() => import('@/components/landing/ServiceSection'), {
-  loading: sectionLoading('min-h-48'),
-});
-const QuickServicesSection = dynamic(() => import('@/components/landing/QuickServicesSection'), {
-  loading: sectionLoading('min-h-36'),
-});
-const QuickRidesSection = dynamic(() => import('@/components/landing/QuickRidesSection'), {
-  loading: sectionLoading('min-h-36'),
-});
-const AppDownloadSection = dynamic(() => import('@/components/landing/AppDownloadSection'), {
   loading: sectionLoading('min-h-40'),
 });
+const QuickServicesSection = dynamic(() => import('@/components/landing/QuickServicesSection'), {
+  loading: sectionLoading('min-h-32'),
+});
+const QuickRidesSection = dynamic(() => import('@/components/landing/QuickRidesSection'), {
+  loading: sectionLoading('min-h-40'),
+});
+const AppDownloadSection = dynamic(() => import('@/components/landing/AppDownloadSection'), {
+  loading: sectionLoading('min-h-24'),
+});
 const BlogSection = dynamic(() => import('@/components/landing/BlogSection'), {
-  loading: sectionLoading('min-h-56'),
+  loading: sectionLoading('min-h-40'),
 });
 const TestimonialsSection = dynamic(() => import('@/components/landing/TestimonialsSection'), {
-  loading: sectionLoading('min-h-36'),
+  loading: sectionLoading('min-h-32'),
 });
 const FaqSection = dynamic(() => import('@/components/landing/FaqSection'), {
-  loading: sectionLoading('min-h-48'),
+  loading: sectionLoading('min-h-40'),
 });
 
 export const metadata = generatePageMetadata({
@@ -46,7 +46,6 @@ export const metadata = generatePageMetadata({
   description: SITE_DESCRIPTION,
   path: '',
   keywords: [...SEO_KEYWORDS],
-  /** Root `title.template` would append `| Liftngo` twice otherwise. */
   useAbsoluteTitle: true,
 });
 
@@ -59,16 +58,37 @@ export default function Home() {
           className="page-stack min-h-[100dvh] min-h-screen w-full overflow-x-clip"
           aria-label="LiftnGo home: logistics, delivery, and transport services"
         >
+          {/* 1. Hero — value prop + pickup input */}
           <Hero pickupBookingSource="homepage" />
+
+          {/* 2. Quick access — popular tools */}
           <QuickServicesSection />
+
+          {/* 3. How it works — 5-step flow */}
           <Features />
+
+          {/* 4. Services — all delivery types */}
           <ServiceSection />
+
+          {/* 5. Why Liftngo — benefits grid + CTA */}
           <QuickRidesSection />
+
+          {/* 6. Business focus — regional authority */}
           <HomeDeepAuthoritySection />
-          <AppDownloadSection />
-          <BlogSection />
+
+          {/* 7. Social proof */}
           <TestimonialsSection />
+
+          {/* 8. Blog */}
+          <BlogSection />
+
+          {/* 9. FAQ */}
           <FaqSection />
+
+          {/* 10. App download banner */}
+          <AppDownloadSection />
+
+          {/* 11. SEO internal links */}
           <HomeSeoContent />
         </main>
         <Footer />

@@ -140,6 +140,30 @@ export const ROUTES = {
   NOIDA_FLEET_TECH: '/noida/fleet-tech',
   /** Alias → `/plans/custom` (see `next.config` redirect). */
   FLEET: '/fleet',
+  /** Jaipur Marketplace - Malviya Nagar local businesses */
+  MALVIYA_NAGAR_MARKETPLACE: '/malviya-nagar',
+  /** Dynamic storefront for marketplace businesses */
+  STORE: '/store/[storeSlug]',
+  /** Store product detail page */
+  STORE_PRODUCT: '/store/[storeSlug]/product/[productSlug]',
+  /** Marketplace cart */
+  MARKETPLACE_CART: '/cart',
+  /** Marketplace checkout */
+  MARKETPLACE_CHECKOUT: '/checkout',
+  /** Order tracking page */
+  ORDER_TRACKING: '/order/[publicTrackingToken]',
+  /** Marketplace help page */
+  MARKETPLACE_HELP: '/help',
+  /** Admin marketplace routes */
+  ADMIN_MARKETPLACE: '/admin/marketplace',
+  ADMIN_MARKETPLACE_STORES: '/admin/marketplace/stores',
+  ADMIN_MARKETPLACE_CATALOGUE: '/admin/marketplace/catalogue',
+  ADMIN_MARKETPLACE_ORDERS: '/admin/marketplace/orders',
+  ADMIN_MARKETPLACE_DELIVERY: '/admin/marketplace/delivery',
+  ADMIN_MARKETPLACE_PAYMENTS: '/admin/marketplace/payments',
+  ADMIN_MARKETPLACE_REFUNDS: '/admin/marketplace/refunds',
+  ADMIN_MARKETPLACE_NOTIFICATIONS: '/admin/marketplace/notifications',
+  ADMIN_MARKETPLACE_ANALYTICS: '/admin/marketplace/analytics',
 } as const;
 
 /**

@@ -1,9 +1,9 @@
 'use client';
 
-import type { SocketConnectionState } from '@/store/customerTripStore';
+import type { ConnectionState } from '@/features/trips';
 
 type SocketConnectionBannerProps = {
-  connectionState: SocketConnectionState;
+  connectionState: ConnectionState;
 };
 
 export default function SocketConnectionBanner({ connectionState }: SocketConnectionBannerProps) {
@@ -22,7 +22,7 @@ export default function SocketConnectionBanner({ connectionState }: SocketConnec
   );
 }
 
-function getBannerMeta(state: SocketConnectionState): { title: string; description: string; className: string } | null {
+function getBannerMeta(state: ConnectionState): { title: string; description: string; className: string } | null {
   switch (state) {
     case 'CONNECTING':
       return {

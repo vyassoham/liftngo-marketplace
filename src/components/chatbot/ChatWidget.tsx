@@ -15,7 +15,7 @@ export default function ChatWidget() {
   if (pathname === '/noida/coconut') return null;
 
   return (
-    <div className="fixed right-4 z-[100] flex flex-col items-end gap-3 bottom-[calc(env(safe-area-inset-bottom)+5rem)] sm:right-6 sm:bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]">
+    <div className="fixed right-4 bottom-4 z-[100] flex flex-col items-end gap-3 sm:right-6 sm:bottom-6">
       {open ? <ChatWindow onClose={close} /> : null}
       <button
         type="button"
@@ -26,7 +26,7 @@ export default function ChatWidget() {
             return next;
           })
         }
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)] text-white shadow-lg ring-2 ring-white/80 transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 sm:h-16 sm:w-16"
+        className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white shadow-lg ring-1 ring-black/5 transition hover:bg-[var(--color-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 sm:h-14 sm:w-14"
         aria-expanded={open}
         aria-controls="liftngo-chat-panel"
         aria-label={open ? 'Close chat' : 'Open chat with Liftngo'}

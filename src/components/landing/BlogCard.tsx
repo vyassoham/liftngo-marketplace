@@ -7,52 +7,45 @@ export interface BlogCardProps {
   imageSrc: string;
   imageAlt: string;
   href: string;
-  /** First visible card on home can set LCP priority */
   priority?: boolean;
 }
 
-/** Single blog card: image top, dark blue overlay with title, snippet, Read More + arrow. Equal height on desktop; Read More aligned at bottom. */
 export default function BlogCard({ title, snippet, imageSrc, imageAlt, href, priority = false }: BlogCardProps) {
   return (
     <article
-      className="relative h-[min(70vw,17rem)] w-[min(86vw,20rem)] flex-shrink-0 overflow-hidden rounded-xl border border-gray-200/80 bg-white sm:h-[min(58vw,18rem)] sm:w-[min(72vw,22rem)] md:h-full md:min-h-[300px] md:w-full md:flex-shrink"
-      style={{
-        boxShadow: '0 4px 4px 0 rgba(0, 0, 0, 0.25)',
-        scrollSnapAlign: 'start',
-      }}
+      className="group relative flex flex-shrink-0 flex-col overflow-hidden rounded-xl border border-gray-100 bg-white transition-shadow hover:shadow-[var(--shadow-elevated)] w-[min(80vw,18rem)] sm:w-[min(72vw,20rem)] md:w-full"
+      style={{ scrollSnapAlign: 'start' }}
     >
-      <div className="absolute inset-0">
+      {/* Image */}
+      <div className="relative h-40 sm:h-44 overflow-hidden">
         <Image
           src={imageSrc}
           alt={imageAlt}
           fill
-          className="object-cover"
-          sizes="(max-width: 768px) 90vw, 33vw"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          sizes="(max-width: 768px) 80vw, 33vw"
           loading={priority ? 'eager' : 'lazy'}
           priority={priority}
         />
-        <div
-          className="absolute inset-x-0 bottom-0 left-0 right-0 pt-12 px-3 pb-3 flex flex-col min-h-[55%]"
-          style={{
-            background: 'linear-gradient(to top, #1A1D3A 0%, #1A1D3A 70%, transparent 100%)',
-          }}
+      </div>
+
+      {/* Content */}
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        <h3 className="font-semibold text-gray-900 text-sm sm:text-base leading-snug line-clamp-2 mb-2">
+          {title}
+        </h3>
+        <p className="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4 flex-1">
+          {snippet}
+        </p>
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-light)]"
         >
-          <h3 className="font-bold text-white text-sm leading-tight line-clamp-2 mb-1 flex-shrink-0">
-            {title}
-          </h3>
-          <p className="text-white/90 text-xs leading-snug line-clamp-2 mb-3 flex-1 min-h-[2.5rem]">
-            {snippet}
-          </p>
-          <Link
-            href={href}
-            className="inline-flex items-center gap-1.5 text-white font-medium text-xs hover:opacity-90 transition-opacity mt-auto flex-shrink-0"
-          >
-            Read More
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </Link>
-        </div>
+          Read more
+          <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </Link>
       </div>
     </article>
   );

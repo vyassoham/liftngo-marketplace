@@ -209,7 +209,7 @@ export default function ChatWindow({ onClose }: Props) {
   return (
     <div
       id="liftngo-chat-panel"
-      className="flex h-[min(28rem,70vh)] w-[min(100vw-2rem,22rem)] flex-col overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-2xl shadow-gray-900/10 transition-[opacity,transform] duration-200 ease-out sm:h-[min(32rem,72vh)] sm:w-[min(100vw-2rem,26rem)]"
+      className="flex h-[min(28rem,70vh)] w-[min(100vw-2rem,22rem)] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl transition-[opacity,transform] duration-200 ease-out sm:h-[min(32rem,72vh)] sm:w-[min(100vw-2rem,24rem)]"
       role="dialog"
       aria-modal="true"
       aria-label="Liftngo Assistant chat"
@@ -222,7 +222,7 @@ export default function ChatWindow({ onClose }: Props) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl p-2 text-white/90 transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          className="rounded-md p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
           aria-label="Close chat"
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -232,7 +232,7 @@ export default function ChatWindow({ onClose }: Props) {
       </header>
 
       <div
-        className="flex-1 space-y-3 overflow-y-auto bg-gradient-to-b from-gray-50/95 to-gray-50 px-3 py-3"
+        className="flex-1 space-y-3 overflow-y-auto bg-gray-50 px-4 py-4"
         role="log"
         aria-live="polite"
       >
@@ -247,10 +247,10 @@ export default function ChatWindow({ onClose }: Props) {
         ))}
         {loading && (
           <div className="flex justify-start">
-            <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-md border border-gray-200/90 bg-white px-4 py-3 shadow-sm">
-              <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.3s]" />
-              <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.15s]" />
-              <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400" />
+            <div className="flex items-center gap-1.5 rounded-lg rounded-bl-sm border border-gray-200 bg-white px-4 py-3 shadow-sm">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gray-400" />
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gray-400 [animation-delay:0.2s]" />
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gray-400 [animation-delay:0.4s]" />
               <span className="sr-only">Assistant is typing</span>
             </div>
           </div>
@@ -299,14 +299,14 @@ export default function ChatWindow({ onClose }: Props) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackWhatsAppClick('chatbot_continue_whatsapp')}
-              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--whatsapp-green)] text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--whatsapp-green)] focus-visible:ring-offset-2"
+              className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--whatsapp-green)] text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--whatsapp-green)] focus-visible:ring-offset-2"
             >
               Continue on WhatsApp
             </a>
           ) : (
             <a
               href={ROUTES.CONTACT}
-              className="flex min-h-11 w-full items-center justify-center rounded-2xl border border-gray-200 bg-white text-sm font-medium text-gray-800 shadow-sm transition-colors hover:bg-gray-50"
+              className="flex min-h-[44px] w-full items-center justify-center rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-800 shadow-sm transition-colors hover:bg-gray-50"
             >
               Open Contact
             </a>
@@ -320,14 +320,14 @@ export default function ChatWindow({ onClose }: Props) {
               <button
                 type="button"
                 onClick={cancelRedirect}
-                className="min-h-10 flex-1 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+                className="min-h-[40px] flex-1 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
               >
                 No, stay in chat
               </button>
               <button
                 type="button"
                 onClick={confirmRedirect}
-                className="min-h-10 flex-1 rounded-xl bg-[var(--color-primary)] text-sm font-semibold text-white shadow-sm transition hover:opacity-95"
+                className="min-h-[40px] flex-1 rounded-lg bg-[var(--color-primary)] text-sm font-medium text-white shadow-sm transition hover:bg-[var(--color-primary-hover)]"
               >
                 Yes, open booking
               </button>
@@ -348,14 +348,14 @@ export default function ChatWindow({ onClose }: Props) {
             }}
             placeholder="Type a message"
             disabled={loading}
-            className="min-h-11 flex-1 rounded-2xl border border-gray-200 bg-gray-50/90 px-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm transition-shadow focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/25 disabled:opacity-60"
+            className="min-h-[44px] flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm transition-colors focus:border-[var(--color-primary)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] disabled:opacity-60"
             aria-label="Message"
           />
           <button
             type="button"
             onClick={() => void sendMessage()}
             disabled={loading || !input.trim()}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-2xl bg-[var(--color-primary)] text-white shadow-md shadow-[var(--color-primary)]/25 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-[var(--color-primary)] text-white shadow-sm transition-colors hover:bg-[var(--color-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Send message"
           >
             {loading ? (

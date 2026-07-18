@@ -7,7 +7,7 @@ import { getPickupLocation, getDropLocation, getSenderDetails } from '@/lib/stor
 import { ROUTES } from '@/lib/constants';
 import { SUPPORT_PHONE } from '@/config/env';
 import { IconButton, BackIcon, Button, CloseIcon } from '@/components/ui';
-import { useCustomerTripRealtime } from '@/hooks/booking';
+import { useCustomerTripRealtime, TripStatus } from '@/features/trips';
 import SocketConnectionBanner from '@/components/booking/SocketConnectionBanner';
 
 /** E.164-style tel link for driver/support (uses NEXT_PUBLIC_SUPPORT_PHONE when set). */
@@ -29,8 +29,6 @@ export default function BookingPage() {
   const [showCancelReasonModal, setShowCancelReasonModal] = useState(false);
   const [showSorryModal, setShowSorryModal] = useState(false);
   const [selectedCancelReason, setSelectedCancelReason] = useState<string | null>(null);
-  const [driverAssigned, setDriverAssigned] = useState(false);
-  const [driverArrived, setDriverArrived] = useState(false);
   const [arrivalCountdown, setArrivalCountdown] = useState(5 * 60);
 
   const userName = getSenderDetails()?.name || 'there';
@@ -40,10 +38,17 @@ export default function BookingPage() {
     if (phone) return phone;
     return sender?.name?.trim() || null;
   }, []);
-  const { connectionState } = useCustomerTripRealtime(realtimeUserId);
+  const { connectionState, currentTrip, status, driver, cancelTripMutation, hasHydrated, isSearching } = useCustomerTripRealtime(realtimeUserId);
 
-  useEffect(() => { const t = setTimeout(() => setDriverAssigned(true), 5000); return () => clearTimeout(t); }, []);
-  useEffect(() => { if (!driverAssigned) return; const t = setTimeout(() => setDriverArrived(true), 5000); return () => clearTimeout(t); }, [driverAssigned]);
+  const driverAssigned = Boolean(driver);
+  const driverArrived = status === TripStatus.ARRIVED || status === TripStatus.PICKED_UP || status === TripStatus.IN_TRANSIT || status === TripStatus.COMPLETED;
+
+  useEffect(() => {
+    if (hasHydrated && !currentTrip && !isSearching) {
+      router.push(ROUTES.DASHBOARD);
+    }
+  }, [hasHydrated, currentTrip, isSearching, router]);
+
   useEffect(() => {
     if (!driverArrived) return;
     const interval = setInterval(() => setArrivalCountdown((p) => (p > 0 ? p - 1 : 0)), 1000);
@@ -74,11 +79,27 @@ export default function BookingPage() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [showPriceBreakup, closePriceBreakup]);
 
-  const amountPayable = 400;
-  const tripFare = 522;
-  const gst = 8;
+  const handleCancelSubmit = useCallback(() => {
+    if (!currentTrip?.id) return;
+    cancelTripMutation.mutate(
+      { tripId: currentTrip.id, reason: selectedCancelReason || undefined },
+      {
+        onSuccess: () => {
+          setShowCancelReasonModal(false);
+          setShowSorryModal(true);
+        },
+        onError: (err: any) => {
+          alert(err?.message || 'Failed to cancel trip');
+        }
+      }
+    );
+  }, [currentTrip, selectedCancelReason, cancelTripMutation]);
+
+  const amountPayable = currentTrip?.fare || 400;
+  const tripFare = currentTrip?.fare ? Math.round(currentTrip.fare * 0.9 * 100) / 100 : 522;
+  const gst = currentTrip?.fare ? Math.round(currentTrip.fare * 0.05 * 100) / 100 : 8;
   const platformFee = 10;
-  const totalAmount = 540;
+  const totalAmount = currentTrip?.fare || 540;
   const countdownDisplay = `${String(Math.floor(arrivalCountdown / 60)).padStart(2, '0')} : ${String(arrivalCountdown % 60).padStart(2, '0')}`;
 
   return (
@@ -165,26 +186,28 @@ export default function BookingPage() {
                 {/* Vehicle details */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[16px] font-bold text-gray-900">UP20CK1433</p>
-                    <p className="mt-0.5 text-[14px] text-gray-500">2 wheeler • Bike</p>
+                    <p className="text-[16px] font-bold text-gray-900">{driver?.vehicleNumber || 'Vehicle Assigned'}</p>
+                    <p className="mt-0.5 text-[14px] text-gray-500">{driver?.vehicleType || 'Delivery Partner'}</p>
                   </div>
                   <div className="relative h-14 w-14 flex-shrink-0">
-                    <Image src="/services/two-wheeler.svg" alt="Bike" fill className="object-contain" />
+                    <Image src="/services/two-wheeler.svg" alt="Vehicle" fill className="object-contain" />
                   </div>
                 </div>
 
                 {/* Driver details */}
                 <div className="mt-4 flex items-center gap-3 rounded-xl border border-gray-200 p-3">
                   <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-lg font-semibold text-white">
-                    RP
-                    <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded bg-amber-400 px-1 text-[10px] font-bold text-gray-900">4.2</span>
+                    {driver?.name ? driver.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
+                    {driver?.rating && (
+                      <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded bg-amber-400 px-1 text-[10px] font-bold text-gray-900">{driver.rating}</span>
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12px] text-gray-500">UP20CK1433</p>
-                    <p className="text-[15px] font-semibold text-gray-900">Rakesh Patel</p>
+                    <p className="text-[12px] text-gray-500">{driver?.vehicleNumber || 'Vehicle'}</p>
+                    <p className="text-[15px] font-semibold text-gray-900">{driver?.name || 'Driver'}</p>
                   </div>
                   <a
-                    href={SUPPORT_TEL}
+                    href={driver?.phone ? `tel:+91${driver.phone.replace(/\D/g, '')}` : SUPPORT_TEL}
                     className="flex h-10 items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-[14px] font-medium text-white"
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

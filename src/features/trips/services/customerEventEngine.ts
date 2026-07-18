@@ -1,8 +1,7 @@
 'use client';
 
-import { useCustomerTripStore } from '@/store/customerTripStore';
-import { CustomerTripStatus, type CustomerSocketEventPayload, type Location } from '@/types/customerTrip';
-import { socketService } from '@/services/socket';
+import { useTripStore, TripStatus, mapTripStatus } from '../store/tripStore';
+import { socketService } from './socket';
 
 type EventName =
   | 'trip:searching'
@@ -15,28 +14,30 @@ type EventName =
 const DEBUG = process.env.NEXT_PUBLIC_WS_DEBUG === 'true';
 const LOCATION_DEBOUNCE_MS = 300;
 
-const STATE_ORDER: Record<CustomerTripStatus, number> = {
-  [CustomerTripStatus.IDLE]: 0,
-  [CustomerTripStatus.SEARCHING]: 1,
-  [CustomerTripStatus.ASSIGNED]: 2,
-  [CustomerTripStatus.ARRIVING]: 3,
-  [CustomerTripStatus.PICKED_UP]: 4,
-  [CustomerTripStatus.IN_TRANSIT]: 5,
-  [CustomerTripStatus.COMPLETED]: 6,
-  [CustomerTripStatus.CANCELLED]: 7,
-  [CustomerTripStatus.EXPIRED]: 8,
+const STATE_ORDER: Record<TripStatus, number> = {
+  [TripStatus.IDLE]: 0,
+  [TripStatus.SEARCHING]: 1,
+  [TripStatus.ASSIGNED]: 2,
+  [TripStatus.ARRIVING]: 3,
+  [TripStatus.ARRIVED]: 4,
+  [TripStatus.PICKED_UP]: 5,
+  [TripStatus.IN_TRANSIT]: 6,
+  [TripStatus.COMPLETED]: 7,
+  [TripStatus.CANCELLED]: 8,
+  [TripStatus.EXPIRED]: 9,
+  [TripStatus.FAILED]: 10,
 };
 
 class CustomerEventEngine {
   private processedEventIds = new Set<string>();
   private locationDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-  private bufferedLocation: Location | null = null;
+  private bufferedLocation: { lat: number; lng: number; address?: string } | null = null;
 
-  handleEvent(eventName: EventName, rawPayload: CustomerSocketEventPayload): void {
+  handleEvent(eventName: EventName, rawPayload: any): void {
     const payload = this.normalizePayload(rawPayload);
     if (!this.isValidEvent(payload, eventName)) return;
 
-    const store = useCustomerTripStore.getState();
+    const store = useTripStore.getState();
     const currentTripId = store.currentTrip?.id;
     if (currentTripId && payload.tripId !== currentTripId) {
       this.logIgnored(eventName, payload, 'tripId_mismatch');
@@ -46,17 +47,29 @@ class CustomerEventEngine {
     switch (eventName) {
       case 'trip:searching':
         if (!store.currentTrip) return;
-        store.updateStatus(CustomerTripStatus.SEARCHING, payload.timestamp);
+        store.updateStatus(TripStatus.SEARCHING, payload.timestamp);
         return;
-      case 'trip:accepted':
-        store.assignDriver(payload.driver ?? null);
-        store.updateStatus(CustomerTripStatus.ASSIGNED, payload.timestamp);
+      case 'trip:accepted': {
+        const driverObj = payload.driver ? {
+          id: payload.driver.id,
+          name: payload.driver.name || '',
+          phone: payload.driver.mobile || '',
+          photo: payload.driver.photo,
+          rating: payload.driver.rating || undefined,
+          vehicleNumber: payload.driver.vehicleNumber || undefined,
+          vehicleType: payload.driver.vehicleType || undefined,
+        } : null;
+        if (driverObj) {
+          store.assignDriver(driverObj);
+        }
+        store.updateStatus(TripStatus.ASSIGNED, payload.timestamp);
         if (store.currentTrip?.id) {
           socketService.instance?.emit('join:trip', { tripId: store.currentTrip.id, role: 'customer' });
         }
         return;
+      }
       case 'trip:expired':
-        if (store.tripStatus === CustomerTripStatus.SEARCHING) {
+        if (store.status === TripStatus.SEARCHING) {
           store.resetTrip();
         }
         return;
@@ -64,9 +77,9 @@ class CustomerEventEngine {
         store.resetTrip();
         return;
       case 'trip:status': {
-        const next = this.normalizeStatus(payload.status);
+        const next = mapTripStatus(payload.status);
         if (!next) return;
-        if (!this.isTransitionAllowed(store.tripStatus, next)) {
+        if (!this.isTransitionAllowed(store.status, next)) {
           this.logIgnored(eventName, payload, 'invalid_transition');
           return;
         }
@@ -75,17 +88,25 @@ class CustomerEventEngine {
         return;
       }
       case 'location:update':
-        if (STATE_ORDER[store.tripStatus] < STATE_ORDER[CustomerTripStatus.ASSIGNED]) {
+        if (STATE_ORDER[store.status] < STATE_ORDER[TripStatus.ASSIGNED]) {
           this.logIgnored(eventName, payload, 'status_not_ready_for_location');
           return;
         }
         if (!payload.location) return;
-        this.bufferedLocation = payload.location;
+        
+        // Map { latitude, longitude } to { lat, lng }
+        const loc = {
+          lat: payload.location.latitude ?? payload.location.lat,
+          lng: payload.location.longitude ?? payload.location.lng,
+          address: payload.location.address,
+        };
+        
+        this.bufferedLocation = loc;
         if (this.locationDebounceTimer) return;
         this.locationDebounceTimer = setTimeout(() => {
           this.locationDebounceTimer = null;
           if (this.bufferedLocation) {
-            useCustomerTripStore.getState().updateLocation(this.bufferedLocation);
+            useTripStore.getState().updateDriverLocation(this.bufferedLocation);
           }
         }, LOCATION_DEBOUNCE_MS);
         return;
@@ -94,36 +115,15 @@ class CustomerEventEngine {
     }
   }
 
-  private isTransitionAllowed(from: CustomerTripStatus, to: CustomerTripStatus): boolean {
+  private isTransitionAllowed(from: TripStatus, to: TripStatus): boolean {
+    // If it's the same status, allow it
+    if (from === to) return true;
+    // Allow cancellation or expiration anytime
+    if (to === TripStatus.CANCELLED || to === TripStatus.EXPIRED || to === TripStatus.FAILED) return true;
     return STATE_ORDER[to] >= STATE_ORDER[from];
   }
 
-  private normalizeStatus(value: unknown): CustomerTripStatus | null {
-    const raw = String(value ?? '').toUpperCase();
-    switch (raw) {
-      case 'SEARCHING':
-        return CustomerTripStatus.SEARCHING;
-      case 'ASSIGNED':
-        return CustomerTripStatus.ASSIGNED;
-      case 'ARRIVING':
-        return CustomerTripStatus.ARRIVING;
-      case 'PICKED_UP':
-        return CustomerTripStatus.PICKED_UP;
-      case 'IN_TRANSIT':
-      case 'IN_PROGRESS':
-        return CustomerTripStatus.IN_TRANSIT;
-      case 'COMPLETED':
-        return CustomerTripStatus.COMPLETED;
-      case 'CANCELLED':
-        return CustomerTripStatus.CANCELLED;
-      case 'EXPIRED':
-        return CustomerTripStatus.EXPIRED;
-      default:
-        return null;
-    }
-  }
-
-  private normalizePayload(payload: CustomerSocketEventPayload): CustomerSocketEventPayload & { timestamp: number } {
+  private normalizePayload(payload: any): any & { timestamp: number } {
     const fallback = Date.now();
     const parsed =
       typeof payload.timestamp === 'number'
@@ -138,14 +138,14 @@ class CustomerEventEngine {
   }
 
   private isValidEvent(
-    payload: CustomerSocketEventPayload & { timestamp: number },
+    payload: any & { timestamp: number },
     eventName: EventName,
-  ): payload is CustomerSocketEventPayload & { timestamp: number; tripId: string } {
+  ): payload is any & { timestamp: number; tripId: string } {
     if (!payload?.tripId) {
       this.logIgnored(eventName, payload, 'missing_trip_id');
       return false;
     }
-    const store = useCustomerTripStore.getState();
+    const store = useTripStore.getState();
     if (payload.timestamp < store.lastEventTimestamp) {
       this.logIgnored(eventName, payload, 'stale_timestamp');
       return false;
@@ -170,11 +170,12 @@ class CustomerEventEngine {
   }
 }
 
-function isTerminalStatus(status: CustomerTripStatus): boolean {
+function isTerminalStatus(status: TripStatus): boolean {
   return (
-    status === CustomerTripStatus.COMPLETED ||
-    status === CustomerTripStatus.CANCELLED ||
-    status === CustomerTripStatus.EXPIRED
+    status === TripStatus.COMPLETED ||
+    status === TripStatus.CANCELLED ||
+    status === TripStatus.EXPIRED ||
+    status === TripStatus.FAILED
   );
 }
 

@@ -50,6 +50,7 @@ import { useDirections } from '@/hooks/booking';
 import { useCreateBooking } from '@/hooks/booking';
 import { toApiVehicleType } from '@/api/services/tripService';
 import { toIndianE164 } from '@/lib/auth/mobileE164';
+import { customerTripLifecycle } from '@/features/trips/services/customerTripLifecycle';
 
 const FOOD_PAYMENT_FLAT_INR = 50;
 
@@ -532,22 +533,81 @@ export default function PaymentPage() {
                 return;
               }
 
-              router.replace(
-                paymentResultSuccessHref({
-                  flow: 'delivery',
-                  paymentId,
-                  amountInr: payableInr,
-                  title: `Goods delivery · ${vehicleName}`,
-                  subtitle:
-                    pickup?.name && drop?.name ? `${pickup.name} → ${drop.name}` : 'Booking payment received',
-                  lines: [
-                    `Paid: ₹${payableInr.toLocaleString('en-IN')}`,
-                    appliedCoupon ? `Coupon applied: ${appliedCoupon}` : '',
-                  ].filter(Boolean),
-                  retryPath,
-                  continuePath: ROUTES.BOOKING,
-                }),
-              );
+              if (
+                pickup?.latitude != null && pickup?.longitude != null &&
+                drop?.latitude != null && drop?.longitude != null &&
+                sender && receiver && vehicle
+              ) {
+                const goodsDesc = selectedGoodType?.title
+                  ? `${selectedGoodType.title} - ${weightKg}kg, ${packages} pkg`
+                  : undefined;
+
+                createBookingMutation.mutate(
+                  {
+                    origin: {
+                      address: pickup.address,
+                      latitude: pickup.latitude,
+                      longitude: pickup.longitude,
+                    },
+                    destination: {
+                      address: drop.address,
+                      latitude: drop.latitude,
+                      longitude: drop.longitude,
+                    },
+                    vehicleType: toApiVehicleType(vehicle),
+                    sender: {
+                      name: sender.name,
+                      mobile: toIndianE164(sender.mobile),
+                    },
+                    receiver: {
+                      name: receiver.name,
+                      mobile: toIndianE164(receiver.mobile),
+                    },
+                    packageDescription: goodsDesc,
+                    packageWeight: weightKg > 0 ? weightKg : undefined,
+                    gstin: gstin || undefined,
+                    couponCode: appliedCoupon || undefined,
+                  },
+                  {
+                    onSuccess: (trip) => {
+                      customerTripLifecycle.markTripCreated(trip);
+
+                      router.replace(
+                        paymentResultSuccessHref({
+                          flow: 'delivery',
+                          paymentId,
+                          amountInr: payableInr,
+                          title: `Goods delivery · ${vehicleName}`,
+                          subtitle:
+                            pickup?.name && drop?.name ? `${pickup.name} → ${drop.name}` : 'Booking payment received',
+                          lines: [
+                            `Paid: ₹${payableInr.toLocaleString('en-IN')}`,
+                            appliedCoupon ? `Coupon applied: ${appliedCoupon}` : '',
+                          ].filter(Boolean),
+                          retryPath,
+                          continuePath: ROUTES.BOOKING,
+                        }),
+                      );
+                    },
+                    onError: (err: any) => {
+                      setPayError(err?.message || 'Payment succeeded, but booking creation failed. Please contact support.');
+                    }
+                  }
+                );
+              } else {
+                router.replace(
+                  paymentResultSuccessHref({
+                    flow: 'delivery',
+                    paymentId,
+                    amountInr: payableInr,
+                    title: `Goods delivery · ${vehicleName}`,
+                    subtitle: 'Booking payment received',
+                    lines: [`Paid: ₹${payableInr.toLocaleString('en-IN')}`],
+                    retryPath,
+                    continuePath: ROUTES.BOOKING,
+                  }),
+                );
+              }
             },
             onError: (err) => {
               setPayBusy(false);
