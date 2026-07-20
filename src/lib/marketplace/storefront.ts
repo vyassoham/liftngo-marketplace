@@ -5,6 +5,13 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { resolveStoreImageUrl } from './store-image-url';
+import {
+  getStoreAvailability,
+  type StoreAvailability,
+} from './business-hours';
+
+const PUBLIC_STORE_STATUSES = ['ACTIVE', 'PUBLISHED', 'PAUSED'];
 
 // Server-side client (uses service role or anon key — no cookies needed for public data)
 function getServerClient() {
@@ -64,6 +71,10 @@ export interface StorefrontStore {
   seo_description: string | null;
   support_phone: string;
   is_featured: boolean;
+  rating: number | null;
+  review_count: number | null;
+  delivery_fee_minor: number | null;
+  is_verified: boolean;
   temporarily_closed_until: string | null;
   tagline: string | null; // derived from seo_title or name
   business_categories: {
@@ -88,11 +99,19 @@ export interface StorefrontData {
 // ─── Computed helpers ─────────────────────────────────────────────────────────
 
 export function isStoreOpen(store: StorefrontStore): boolean {
-  if (store.status !== 'ACTIVE') return false;
-  if (store.temporarily_closed_until) {
-    return new Date(store.temporarily_closed_until) < new Date();
-  }
-  return true;
+  return getStoreAvailability({
+    status: store.status,
+    businessHours: store.business_hours,
+    temporarilyClosedUntil: store.temporarily_closed_until,
+  }).isOpen;
+}
+
+export function getStorefrontAvailability(store: StorefrontStore): StoreAvailability {
+  return getStoreAvailability({
+    status: store.status,
+    businessHours: store.business_hours,
+    temporarilyClosedUntil: store.temporarily_closed_until,
+  });
 }
 
 export function getPreparationLabel(store: StorefrontStore): string {
@@ -132,12 +151,13 @@ export async function getStorefrontData(slug: string): Promise<StorefrontData | 
       status, public_phone, public_email, public_address, landmark,
       latitude, longitude, minimum_order_minor, default_preparation_minutes,
       business_hours, offers, seo_title, seo_description,
-      support_phone, is_featured, temporarily_closed_until,
+      support_phone, is_featured, rating, review_count,
+      delivery_fee_minor, is_verified, temporarily_closed_until,
       business_categories (id, name, slug, icon_url),
       localities (id, name, city)
     `)
     .eq('slug', slug)
-    .in('status', ['ACTIVE', 'PAUSED'])  // Paused = visible but closed
+    .in('status', PUBLIC_STORE_STATUSES)  // Paused = visible but closed
     .maybeSingle();
 
   if (storeError || !store) {
@@ -169,7 +189,14 @@ export async function getStorefrontData(slug: string): Promise<StorefrontData | 
   // Normalize BigInt/Decimal fields returned by Supabase (they come as strings for large values)
   const normalizedStore: StorefrontStore = {
     ...store,
+    logo_url: resolveStoreImageUrl(store.logo_url),
+    banner_url: resolveStoreImageUrl(store.banner_url),
+    thumbnail_url: resolveStoreImageUrl(store.thumbnail_url),
     minimum_order_minor: Number(store.minimum_order_minor) || 0,
+    rating: store.rating === null ? null : Number(store.rating),
+    review_count: store.review_count === null ? null : Number(store.review_count),
+    delivery_fee_minor:
+      store.delivery_fee_minor === null ? null : Number(store.delivery_fee_minor),
     latitude: store.latitude ? Number(store.latitude) : null,
     longitude: store.longitude ? Number(store.longitude) : null,
     tagline: null,
@@ -181,13 +208,16 @@ export async function getStorefrontData(slug: string): Promise<StorefrontData | 
     ...p,
     price_minor: Number(p.price_minor),
     original_price_minor: p.original_price_minor ? Number(p.original_price_minor) : null,
-    images: Array.isArray(p.images) ? p.images : [],
+    images: Array.isArray(p.images) ? p.images.map((image) => resolveStoreImageUrl(image)) : [],
     description: p.description || null,
   }));
 
   return {
     store: normalizedStore,
-    categories: categories || [],
+    categories: (categories || []).map((category) => ({
+      ...category,
+      image_url: resolveStoreImageUrl(category.image_url) || null,
+    })),
     products: normalizedProducts,
   };
 }
@@ -202,10 +232,29 @@ export async function getStoreMetadata(slug: string): Promise<Pick<StorefrontSto
     .from('stores')
     .select('name, seo_title, seo_description, slug, thumbnail_url')
     .eq('slug', slug)
-    .in('status', ['ACTIVE', 'PAUSED'])
+    .in('status', PUBLIC_STORE_STATUSES)
     .maybeSingle();
 
   return data || null;
+}
+
+export async function getStoreAvailabilityBySlug(slug: string): Promise<StoreAvailability | null> {
+  const supabase = getServerClient();
+  const { data, error } = await supabase
+    .from('stores')
+    .select('status, business_hours, temporarily_closed_until')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return getStoreAvailability({
+    status: data.status,
+    businessHours:
+      data.business_hours && typeof data.business_hours === 'object'
+        ? (data.business_hours as Record<string, unknown>)
+        : {},
+    temporarilyClosedUntil: data.temporarily_closed_until,
+  });
 }
 
 // ─── Marketplace Listing ──────────────────────────────────────────────────────
@@ -256,7 +305,7 @@ export async function getMarketplaceStores(
       business_categories (id, name, slug),
       localities (id, name)
     `)
-    .in('status', ['ACTIVE', 'PAUSED'])
+    .in('status', PUBLIC_STORE_STATUSES)
     .order('is_featured', { ascending: false })
     .order('name', { ascending: true });
 
@@ -266,6 +315,8 @@ export async function getMarketplaceStores(
 
   let stores = data.map((s) => ({
     ...s,
+    logo_url: resolveStoreImageUrl(s.logo_url) || null,
+    thumbnail_url: resolveStoreImageUrl(s.thumbnail_url) || null,
     minimum_order_minor: Number(s.minimum_order_minor) || 0,
     business_categories: (Array.isArray(s.business_categories) ? s.business_categories[0] : s.business_categories) as unknown as MarketplaceStore['business_categories'],
     localities: (Array.isArray(s.localities) ? s.localities[0] : s.localities) as unknown as MarketplaceStore['localities'],

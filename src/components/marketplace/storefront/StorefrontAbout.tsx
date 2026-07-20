@@ -1,6 +1,4 @@
-'use client';
-
-import { Clock, MapPin, Phone, Mail, Tag, Info } from 'lucide-react';
+import { Clock3, IndianRupee, Info, Mail, MapPin, Phone } from "lucide-react";
 
 interface StorefrontAboutProps {
   store: {
@@ -20,140 +18,114 @@ interface StorefrontAboutProps {
 }
 
 export default function StorefrontAbout({ store }: StorefrontAboutProps) {
-  const hasContactInfo = store.phone || store.email || store.address;
+  const location = [store.address, store.landmark, store.locality, store.city]
+    .filter(Boolean)
+    .join(", ");
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
-        <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
-          About {store.name}
-        </h2>
-
-        {store.description && (
-          <p className="mt-3 text-gray-600 leading-relaxed">
-            {store.description}
-          </p>
-        )}
-
-        {/* Info grid */}
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <InfoCard
-            icon={<Clock className="h-5 w-5" />}
-            label="Preparation Time"
+    <section className="mx-auto hidden max-w-7xl px-4 pb-14 md:block md:px-6 lg:px-8">
+      <div className="overflow-hidden rounded-[20px] border border-[#eadfd5] bg-white shadow-[0_10px_30px_rgba(70,43,23,.06)]">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4">
+          <StoreFact
+            icon={<Clock3 className="h-5 w-5" />}
+            label="Preparation"
             value={store.preparationLabel}
-            color="#3B82F6"
           />
-
-          <InfoCard
-            icon={<Tag className="h-5 w-5" />}
-            label="Minimum Order"
+          <StoreFact
+            icon={<IndianRupee className="h-5 w-5" />}
+            label="Minimum order"
             value={`₹${store.minimumOrder}`}
-            color="#10B981"
           />
-
-          {(store.address || store.locality) && (
-            <InfoCard
-              icon={<MapPin className="h-5 w-5" />}
-              label="Location"
-              value={[store.address, store.landmark, store.locality, store.city]
-                .filter(Boolean)
-                .join(', ')}
-              color="#F59E0B"
-            />
-          )}
-
-          {store.phone && (
-            <InfoCard
-              icon={<Phone className="h-5 w-5" />}
-              label="Store Phone"
-              value={store.phone}
-              href={`tel:${store.phone}`}
-              color="#8B5CF6"
-            />
-          )}
-
-          {store.email && (
-            <InfoCard
-              icon={<Mail className="h-5 w-5" />}
-              label="Email"
-              value={store.email}
-              href={`mailto:${store.email}`}
-              color="#EC4899"
-            />
-          )}
-
-          {store.businessCategory && (
-            <InfoCard
+          {store.businessCategory ? (
+            <StoreFact
               icon={<Info className="h-5 w-5" />}
               label="Category"
               value={store.businessCategory}
-              color="#6B7280"
             />
-          )}
+          ) : null}
+          {store.supportPhone ? (
+            <StoreFact
+              icon={<Phone className="h-5 w-5" />}
+              label="Support"
+              value={store.supportPhone}
+              href={`tel:${store.supportPhone}`}
+            />
+          ) : null}
         </div>
 
-        {/* Support box */}
-        <div className="mt-6 rounded-xl border border-orange-200 bg-orange-50 p-4">
-          <div className="flex items-start gap-3">
-            <Phone className="h-5 w-5 flex-shrink-0 text-orange-600 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-gray-900">Need Help with Your Order?</h3>
-              <p className="mt-1 text-sm text-gray-600">
-                Contact Liftngo support at{' '}
-                <a
-                  href={`tel:${store.supportPhone}`}
-                  className="font-bold text-orange-600 hover:underline"
-                >
-                  {store.supportPhone}
-                </a>
+        {store.description || location || store.phone || store.email ? (
+          <div className="border-t border-[#eee5dc] bg-[#fffaf5] px-5 py-5 sm:px-7">
+            <h2 className="text-lg font-black text-[#251b16]">
+              About {store.name}
+            </h2>
+            {store.description ? (
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-[#76695f]">
+                {store.description}
               </p>
+            ) : null}
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-[#675a50]">
+              {location ? (
+                <span className="inline-flex items-start gap-2">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#ff5a00]" />
+                  {location}
+                </span>
+              ) : null}
+              {store.phone ? (
+                <a
+                  href={`tel:${store.phone}`}
+                  className="inline-flex items-center gap-2 hover:text-[#ff5a00]"
+                >
+                  <Phone className="h-4 w-4 text-[#ff5a00]" />
+                  {store.phone}
+                </a>
+              ) : null}
+              {store.email ? (
+                <a
+                  href={`mailto:${store.email}`}
+                  className="inline-flex items-center gap-2 hover:text-[#ff5a00]"
+                >
+                  <Mail className="h-4 w-4 text-[#ff5a00]" />
+                  {store.email}
+                </a>
+              ) : null}
             </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </section>
   );
 }
 
-// ─── Info Card ────────────────────────────────────────────────────────────────
-
-function InfoCard({
+function StoreFact({
   icon,
   label,
   value,
   href,
-  color,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   href?: string;
-  color: string;
 }) {
-  const inner = (
-    <div className="flex items-start gap-3">
-      <div
-        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
-        style={{ background: `${color}18`, color }}
-      >
+  const content = (
+    <div className="flex items-center gap-3 px-5 py-5 sm:px-6">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#fff0e7] text-[#ff5a00]">
         {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{label}</p>
-        <p className="mt-0.5 text-sm font-medium text-gray-800 break-words">{value}</p>
-      </div>
+      </span>
+      <span className="min-w-0">
+        <span className="block text-xs font-semibold text-[#978a7f]">
+          {label}
+        </span>
+        <span className="mt-0.5 block truncate text-sm font-extrabold text-[#2b211c]">
+          {value}
+        </span>
+      </span>
     </div>
   );
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 hover:bg-gray-100 transition-colors">
-      {href ? (
-        <a href={href} className="block">
-          {inner}
-        </a>
-      ) : (
-        inner
-      )}
+    <div className="border-b border-[#eee5dc] last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
+      {href ? <a href={href}>{content}</a> : content}
     </div>
   );
 }

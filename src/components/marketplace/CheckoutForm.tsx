@@ -2,9 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, Navigation, Phone, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
+import { MapPin, Navigation, CreditCard, AlertCircle, CheckCircle, Clock3 } from 'lucide-react';
 import { useCartStore } from '@/store/marketplace/cart.store';
 import { validateCustomerAddress, validatePhoneNumber } from '@/lib/marketplace/utils/validation';
+import type { StoreAvailability } from '@/lib/marketplace/business-hours';
+
+async function fetchStoreAvailability(storeSlug: string): Promise<StoreAvailability> {
+  const response = await fetch(`/api/marketplace/stores/${encodeURIComponent(storeSlug)}/availability`, {
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error('Unable to verify store hours');
+  return response.json() as Promise<StoreAvailability>;
+}
 
 export default function CheckoutForm() {
   const router = useRouter();
@@ -12,6 +21,8 @@ export default function CheckoutForm() {
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [availability, setAvailability] = useState<StoreAvailability | null>(null);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -30,7 +41,25 @@ export default function CheckoutForm() {
   useEffect(() => {
     if (!cart || cart.items.length === 0) {
       router.push('/malviya-nagar');
+      return;
     }
+
+    let cancelled = false;
+    setAvailability(null);
+    setAvailabilityError(null);
+    fetchStoreAvailability(cart.storeSlug)
+      .then((nextAvailability) => {
+        if (!cancelled) setAvailability(nextAvailability);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAvailabilityError('Store hours could not be verified. Ordering is unavailable right now.');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [cart, router]);
 
   const handleGetLocation = () => {
@@ -97,6 +126,11 @@ export default function CheckoutForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!cart || !availability?.canOrder) {
+      setErrors({ form: availability?.nextOpenLabel ?? 'This store is currently closed for orders.' });
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
@@ -104,6 +138,15 @@ export default function CheckoutForm() {
     setLoading(true);
 
     try {
+      const latestAvailability = await fetchStoreAvailability(cart.storeSlug);
+      setAvailability(latestAvailability);
+      if (!latestAvailability.canOrder) {
+        setErrors({
+          form: latestAvailability.nextOpenLabel ?? 'This store is currently closed for orders.',
+        });
+        return;
+      }
+
       // Simulate order creation
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -129,6 +172,7 @@ export default function CheckoutForm() {
   }
 
   const totalWithDelivery = cart.total + (deliveryQuote?.fee || 0);
+  const canOrder = availability?.canOrder === true && !availabilityError;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
@@ -136,6 +180,27 @@ export default function CheckoutForm() {
         <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">Checkout</h1>
         <p className="mt-2 text-gray-600">Complete your order from {cart.storeName}</p>
       </div>
+
+      {!canOrder && (
+        <div
+          className="mb-6 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-700"
+          role="alert"
+        >
+          <Clock3 className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-bold">
+              {availabilityError
+                ? 'Ordering is temporarily unavailable'
+                : availability
+                  ? 'This store is closed for orders'
+                  : 'Checking store hours…'}
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              {availabilityError ?? availability?.nextOpenLabel ?? 'Please wait while we confirm availability.'}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Form */}
@@ -298,10 +363,14 @@ export default function CheckoutForm() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full rounded-full bg-orange-500 py-4 font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+              disabled={loading || !canOrder}
+              className="w-full rounded-full bg-orange-500 py-4 font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 disabled:opacity-100"
             >
-              {loading ? 'Processing...' : `Pay ₹${totalWithDelivery}`}
+              {loading
+                ? 'Processing...'
+                : canOrder
+                  ? `Pay ₹${totalWithDelivery}`
+                  : availability?.nextOpenLabel ?? 'Ordering closed'}
             </button>
           </form>
         </div>

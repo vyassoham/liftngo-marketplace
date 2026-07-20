@@ -1,0 +1,33 @@
+'use client';
+
+import { ArrowLeft, ArrowRight, Clock3, MapPin, Search, Star, Store, Truck } from 'lucide-react';
+import Link from 'next/link';
+import { useMemo, useRef, useState } from 'react';
+import type { MarketplaceStore } from '@/lib/marketplace/storefront';
+
+interface Props { stores: MarketplaceStore[]; }
+
+function preparationLabel(minutes: number) {
+  return minutes <= 15 ? `${minutes} min` : minutes <= 30 ? `${minutes - 5}-${minutes} min` : `${minutes}-${minutes + 10} min`;
+}
+
+function StorePlaceholder({ name, accent }: { name: string; accent?: string | null }) {
+  return <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-white" style={{ background: `linear-gradient(135deg, ${accent || '#f97316'}, #2c2d5b)` }}><Store className="h-9 w-9 opacity-90" /><span className="max-w-[80%] truncate text-xs font-bold tracking-wide">{name}</span></div>;
+}
+
+function StoreCard({ store }: { store: MarketplaceStore }) {
+  const accent = store.accent_colour || '#f97316';
+  return <Link href={`/store/${store.slug}`} className="group block min-w-0"><div className="relative aspect-[1.45] overflow-hidden rounded-2xl bg-stone-100 shadow-sm transition duration-200 group-hover:-translate-y-1 group-hover:shadow-xl"><StorePlaceholder name={store.name} accent={accent} /><div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/45 to-transparent" />{store.is_featured && <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-extrabold text-slate-900">Featured</span>}</div><div className="px-1 pt-2"><h2 className="truncate text-sm font-extrabold text-[#02060c]">{store.name}</h2><p className="mt-1 flex items-center gap-1 text-xs font-semibold text-[#3d4152]"><span className="grid h-4 w-4 place-items-center rounded-full bg-emerald-600 text-[9px] text-white"><Star className="h-2.5 w-2.5 fill-current" /></span><span>New on Liftngo</span><span className="text-slate-400">•</span><Clock3 className="h-3.5 w-3.5" />{preparationLabel(store.default_preparation_minutes || 20)}</p><p className="mt-1 truncate text-xs text-[#686b78]">{store.business_categories?.name || 'Local store'}</p><p className="truncate text-xs text-[#686b78]">{store.localities?.name || 'Near you'}</p></div></Link>;
+}
+
+export default function StoresDirectory({ stores }: Props) {
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('all');
+  const railRef = useRef<HTMLDivElement>(null);
+  const categories = useMemo(() => Array.from(new Map(stores.filter((s) => s.business_categories).map((s) => [s.business_categories!.slug, s.business_categories!])).values()), [stores]);
+  const visible = useMemo(() => stores.filter((store) => (category === 'all' || store.business_categories?.slug === category) && `${store.name} ${store.business_categories?.name || ''} ${store.localities?.name || ''}`.toLowerCase().includes(query.toLowerCase())), [stores, query, category]);
+  const featured = stores.filter((store) => store.is_featured).concat(stores.filter((store) => !store.is_featured)).slice(0, 6);
+  const scroll = (amount: number) => railRef.current?.scrollBy({ left: amount, behavior: 'smooth' });
+
+  return <div className="px-4 pt-24 sm:px-6"><div className="mx-auto max-w-6xl"><section className="relative overflow-hidden rounded-[2rem] bg-[#2c2d5b] px-6 py-10 text-white sm:px-10 sm:py-14"><div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-orange-500/30 blur-3xl" /><div className="relative max-w-xl"><p className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold"><Truck className="h-3.5 w-3.5" /> Liftngo marketplace</p><h1 className="text-3xl font-black tracking-tight sm:text-5xl">Discover stores near you</h1><p className="mt-3 text-sm leading-6 text-white/75 sm:text-base">Everyday essentials, local favourites, and more — delivered by Liftngo.</p><label className="mt-7 flex items-center gap-3 rounded-xl bg-white px-4 py-3 text-slate-900 shadow-xl"><Search className="h-5 w-5 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search stores, categories or localities" className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" /></label></div></section><section className="mt-10"><div className="flex items-center justify-between"><h2 className="text-xl font-extrabold text-[#02060c]">What are you looking for?</h2><div className="flex gap-2"><button onClick={() => scroll(-280)} aria-label="Previous categories" className="grid h-8 w-8 place-items-center rounded-full bg-stone-200"><ArrowLeft className="h-4 w-4" /></button><button onClick={() => scroll(280)} aria-label="Next categories" className="grid h-8 w-8 place-items-center rounded-full bg-stone-200"><ArrowRight className="h-4 w-4" /></button></div></div><div ref={railRef} className="mt-5 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none]"><button onClick={() => setCategory('all')} className={`shrink-0 rounded-2xl px-5 py-4 text-sm font-bold ${category === 'all' ? 'bg-[#2c2d5b] text-white' : 'bg-white text-slate-700 shadow-sm ring-1 ring-stone-200'}`}>All stores</button>{categories.map((item) => <button key={item.slug} onClick={() => setCategory(item.slug)} className={`shrink-0 rounded-2xl px-5 py-4 text-sm font-bold ${category === item.slug ? 'bg-orange-500 text-white' : 'bg-white text-slate-700 shadow-sm ring-1 ring-stone-200'}`}>{item.name}</button>)}</div></section><section className="mt-12"><h2 className="text-xl font-extrabold text-[#02060c]">Top stores on Liftngo</h2><div className="mt-5 flex gap-5 overflow-x-auto pb-3 [scrollbar-width:none]">{featured.map((store) => <div key={store.id} className="w-52 shrink-0"><StoreCard store={store} /></div>)}</div></section><section className="mt-12 border-t border-stone-200 pt-10"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-600">Store directory</p><h2 className="mt-1 text-2xl font-extrabold text-[#02060c]">Restaurants & stores near you</h2></div><p className="text-sm text-slate-500">{visible.length} available</p></div>{visible.length ? <div className="mt-7 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">{visible.map((store) => <StoreCard key={store.id} store={store} />)}</div> : <div className="mt-8 rounded-2xl border border-dashed border-stone-300 py-16 text-center"><MapPin className="mx-auto h-8 w-8 text-stone-300" /><p className="mt-3 font-bold text-slate-700">No stores found</p><p className="mt-1 text-sm text-slate-500">Try another category or search phrase.</p></div>}</section></div></div>;
+}

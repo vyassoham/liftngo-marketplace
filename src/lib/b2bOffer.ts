@@ -31,7 +31,8 @@ export function isB2bOfferLandingPath(pathname: string | null): boolean {
 }
 
 export function shouldShowB2bOfferPopup(pathname: string | null): boolean {
-  return !isB2bOfferLandingPath(pathname);
+  if (!pathname || isB2bOfferLandingPath(pathname)) return false;
+  return !pathname.startsWith('/locations/') && !pathname.startsWith('/store/');
 }
 
 export function isB2bOfferPopupDismissed(): boolean {

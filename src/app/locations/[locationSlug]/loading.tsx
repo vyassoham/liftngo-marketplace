@@ -1,0 +1,3 @@
+export default function LocationLoading() {
+  return <main className="min-h-screen bg-white px-4 py-6 sm:px-6"><div className="mx-auto max-w-7xl animate-pulse"><div className="h-16 rounded-2xl bg-slate-100" /><div className="mt-6 h-5 w-56 rounded bg-slate-100" /><div className="mt-6 h-[445px] rounded-[28px] bg-orange-50" /><div className="mt-7 grid grid-cols-4 gap-4 sm:grid-cols-8">{Array.from({ length: 8 }, (_, index) => <div key={index} className="h-24 rounded-2xl bg-slate-100" />)}</div><div className="mt-12 grid grid-cols-2 gap-5 md:grid-cols-5">{Array.from({ length: 5 }, (_, index) => <div key={index}><div className="aspect-[.8] rounded-2xl bg-slate-100" /><div className="mt-3 h-4 w-3/4 rounded bg-slate-100" /></div>)}</div></div></main>;
+}

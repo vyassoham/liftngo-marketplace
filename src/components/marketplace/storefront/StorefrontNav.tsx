@@ -1,126 +1,160 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
+import Image from "next/image";
+import { ImageIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface Category {
   id: string;
   name: string;
   slug: string;
-  icon: string | null;
   imageUrl: string | null;
 }
 
 interface StorefrontNavProps {
   categories: Category[];
   accentColor: string;
+  allImageUrl: string | null;
 }
 
-export default function StorefrontNav({ categories, accentColor }: StorefrontNavProps) {
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+export default function StorefrontNav({
+  categories,
+  accentColor,
+  allImageUrl,
+}: StorefrontNavProps) {
+  const [activeCategory, setActiveCategory] = useState("all");
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Sync active category pill with scroll position
   useEffect(() => {
     const handleScroll = () => {
-      const sections = categories.map((c) =>
-        document.getElementById(`section-${c.id}`)
-      );
+      if (
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 8
+      ) {
+        setActiveCategory(categories.at(-1)?.id ?? "all");
+        return;
+      }
 
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const el = sections[i];
-        if (!el) continue;
-        const rect = el.getBoundingClientRect();
-        if (rect.top <= 140) {
-          setActiveCategory(categories[i].id);
+      const activationLine = window.innerWidth < 768 ? 140 : 190;
+      for (let index = categories.length - 1; index >= 0; index -= 1) {
+        const section = document.getElementById(
+          `section-${categories[index].id}`,
+        );
+        if (section && section.getBoundingClientRect().top <= activationLine) {
+          setActiveCategory(categories[index].id);
           return;
         }
       }
-      setActiveCategory('all');
+      setActiveCategory("all");
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [categories]);
+
+  useEffect(() => {
+    const active = scrollRef.current?.querySelector<HTMLElement>(
+      '[data-active="true"]',
+    );
+    active?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [activeCategory]);
 
   const scrollToSection = (id: string) => {
     setActiveCategory(id);
-    if (id === 'all') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-    const el = document.getElementById(`section-${id}`);
-    if (!el) return;
-    const offset = 80; // height of sticky nav
-    const top = el.getBoundingClientRect().top + window.scrollY - offset;
-    window.scrollTo({ top, behavior: 'smooth' });
+    const section = document.getElementById(
+      id === "all" ? "storefront-products" : `section-${id}`,
+    );
+    if (!section) return;
+    const offset = window.innerWidth < 768 ? 126 : 170;
+    const top = section.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: "smooth" });
   };
 
-  // Scroll the pill into view when it changes
-  useEffect(() => {
-    if (!scrollRef.current) return;
-    const active = scrollRef.current.querySelector('[data-active="true"]') as HTMLElement;
-    if (active) {
-      active.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
-    }
-  }, [activeCategory]);
-
-  if (categories.length === 0) return null;
+  if (!categories.length) return null;
 
   return (
-    <div className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur-sm shadow-sm">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <nav className="sticky top-0 z-30 border-b border-[#eadfd5] bg-white/95 shadow-[0_8px_22px_rgba(71,45,23,.06)] backdrop-blur-xl">
+      <div className="mx-auto max-w-7xl px-3 md:px-6 lg:px-8">
         <div
           ref={scrollRef}
-          className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-none"
+          className="flex gap-2 overflow-x-auto py-2 scrollbar-none md:gap-3 md:py-3"
         >
-          {/* "All" pill */}
-          <button
-            data-active={activeCategory === 'all'}
-            onClick={() => scrollToSection('all')}
-            className="whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition-all duration-200 flex-shrink-0"
-            style={
-              activeCategory === 'all'
-                ? {
-                    background: accentColor,
-                    color: '#fff',
-                    boxShadow: `0 2px 8px ${accentColor}55`,
-                  }
-                : {
-                    background: '#F3F4F6',
-                    color: '#374151',
-                  }
-            }
-          >
-            All
-          </button>
-
+          <CategoryTile
+            name="All"
+            imageUrl={allImageUrl}
+            active={activeCategory === "all"}
+            accentColor={accentColor}
+            onClick={() => scrollToSection("all")}
+          />
           {categories.map((category) => (
-            <button
+            <CategoryTile
               key={category.id}
-              data-active={activeCategory === category.id}
+              name={category.name}
+              imageUrl={category.imageUrl}
+              active={activeCategory === category.id}
+              accentColor={accentColor}
               onClick={() => scrollToSection(category.id)}
-              className="whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 flex-shrink-0 flex items-center gap-1.5"
-              style={
-                activeCategory === category.id
-                  ? {
-                      background: accentColor,
-                      color: '#fff',
-                      boxShadow: `0 2px 8px ${accentColor}55`,
-                    }
-                  : {
-                      background: '#F3F4F6',
-                      color: '#374151',
-                    }
-              }
-            >
-              {category.icon && (
-                <span className="text-sm leading-none">{category.icon}</span>
-              )}
-              {category.name}
-            </button>
+            />
           ))}
         </div>
       </div>
-    </div>
+    </nav>
+  );
+}
+
+function CategoryTile({
+  name,
+  imageUrl,
+  active,
+  accentColor,
+  onClick,
+}: {
+  name: string;
+  imageUrl: string | null;
+  active: boolean;
+  accentColor: string;
+  onClick: () => void;
+}) {
+  const [imageError, setImageError] = useState(false);
+
+  return (
+    <button
+      type="button"
+      data-active={active}
+      onClick={onClick}
+      className="group flex h-[80px] w-[58px] shrink-0 flex-col items-center rounded-[14px] border bg-white px-1 pb-1 pt-1 text-center shadow-[0_7px_22px_rgba(60,38,20,.06)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_11px_28px_rgba(60,38,20,.11)] md:h-[132px] md:w-[106px] md:rounded-2xl md:px-2 md:pb-2.5 md:pt-2"
+      style={{
+        borderColor: active ? accentColor : "#eee4da",
+        boxShadow: active ? `0 10px 28px ${accentColor}1f` : undefined,
+      }}
+      aria-pressed={active}
+    >
+      <span className="relative block h-[51px] w-full overflow-hidden rounded-[10px] bg-[#f8f1ea] md:h-[84px] md:rounded-xl">
+        {imageUrl && !imageError ? (
+          <Image
+            src={imageUrl}
+            alt=""
+            fill
+            sizes="(max-width: 767px) 58px, 106px"
+            className="object-contain p-0.5 transition duration-300 group-hover:scale-105"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center text-[#a6978a]">
+            <ImageIcon className="h-6 w-6" />
+          </span>
+        )}
+      </span>
+      <span
+        className="mt-1 line-clamp-2 text-[8px] font-bold leading-[1.05] md:mt-2 md:text-xs md:leading-[1.15]"
+        style={{ color: active ? accentColor : "#261c17" }}
+      >
+        {name}
+      </span>
+    </button>
   );
 }
