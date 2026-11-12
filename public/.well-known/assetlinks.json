@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.liftngostore.twa",
+      "sha256_cert_fingerprints": [
+        "37:C5:4E:2B:43:9A:CC:D6:9D:94:B7:AF:80:39:DE:48:FD:37:E6:FF:8D:7A:67:AA:2B:73:C9:5E:45:7A:5F:B2"
+      ]
+    }
+  }
+]
