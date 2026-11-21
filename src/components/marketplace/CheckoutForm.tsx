@@ -142,6 +142,7 @@ export default function CheckoutForm() {
         amountInr: totalAmount,
         receipt: `store_${Date.now()}`,
         description: `Order from ${cart.storeName} (${cart.items.length} items)`,
+        preferredMethod: paymentMethod === 'upi' ? 'upi' : 'card',
         notes: {
           flow: 'marketplace_store',
           storeSlug: cart.storeSlug,

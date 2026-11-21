@@ -20,6 +20,8 @@ interface RazorpayOptions {
   prefill?: { name?: string; email?: string; contact?: string };
   notes?: Record<string, string>;
   theme?: { color?: string };
+  config?: Record<string, any>;
+  method?: Record<string, any>;
   handler: (response: RazorpaySuccessResponse) => void;
   modal?: { ondismiss?: () => void };
 }
@@ -80,6 +82,8 @@ export interface OpenPaymentArgs {
   prefill?: { name?: string; email?: string; contact?: string };
   /** Product description shown in Razorpay modal. */
   description?: string;
+  /** Preferred primary payment instrument (e.g. 'upi' or 'card'). */
+  preferredMethod?: 'upi' | 'card' | 'netbanking' | 'wallet';
   /** Called after payment is verified server-side. */
   onSuccess: (data: { paymentId: string; orderId: string }) => void;
   /** Called when payment fails or is dismissed. */
@@ -143,12 +147,47 @@ export function useRazorpay() {
         key: RAZORPAY_KEY_ID,
         amount: Math.round(args.amountInr * 100),
         currency,
-        name: 'Liftngo',
+        name: 'Liftngo Store',
         description: args.description ?? 'Payment',
         image: '/favicon.png',
         order_id: orderId,
         prefill: args.prefill,
-        theme: { color: '#2C2D5B' },
+        theme: { color: '#013C7F' },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: 'Pay via UPI',
+                instruments: [
+                  {
+                    method: 'upi',
+                  },
+                ],
+              },
+              other: {
+                name: 'Cards & NetBanking',
+                instruments: [
+                  {
+                    method: 'card',
+                  },
+                  {
+                    method: 'netbanking',
+                  },
+                  {
+                    method: 'wallet',
+                  },
+                ],
+              },
+            },
+            sequence:
+              args.preferredMethod === 'card'
+                ? ['block.other', 'block.upi']
+                : ['block.upi', 'block.other'],
+            preferences: {
+              show_default_blocks: true,
+            },
+          },
+        },
         handler: async (response: RazorpaySuccessResponse) => {
           // 3. Verify signature on server
           try {
