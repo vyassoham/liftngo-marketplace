@@ -2,17 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, Navigation, Phone, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
+import {
+  MapPin,
+  Navigation,
+  Phone,
+  CreditCard,
+  AlertCircle,
+  CheckCircle,
+  Smartphone,
+  Banknote,
+  ShieldCheck,
+} from 'lucide-react';
 import { useCartStore } from '@/store/marketplace/cart.store';
 import { validateCustomerAddress, validatePhoneNumber } from '@/lib/marketplace/utils/validation';
+import { useRazorpay } from '@/lib/razorpay';
+
+type PaymentMethodType = 'upi' | 'cards' | 'cod';
 
 export default function CheckoutForm() {
   const router = useRouter();
   const { cart, clearCart } = useCartStore();
+  const { openPayment } = useRazorpay();
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('upi');
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -51,7 +66,7 @@ export default function CheckoutForm() {
           longitude: position.coords.longitude,
         }));
         setLocationLoading(false);
-        
+
         // Mock delivery quote
         setDeliveryQuote({
           fee: 40,
@@ -102,19 +117,64 @@ export default function CheckoutForm() {
     }
 
     setLoading(true);
+    setErrors({});
 
+    const totalAmount = cart.total + (deliveryQuote?.fee || 0);
+    const trackingToken = `LNG${Date.now().toString().slice(-6)}`;
+
+    // If Cash on Delivery is selected
+    if (paymentMethod === 'cod') {
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        clearCart();
+        router.push(`/order/${trackingToken}?payment=cod`);
+      } catch (err) {
+        setErrors({ form: 'Failed to place COD order. Please try again.' });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Online / UPI payment via Razorpay
     try {
-      // Simulate order creation
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Clear cart and redirect to order tracking
-      clearCart();
-      router.push('/order/ABC123XYZ');
-    } catch (error) {
-      console.error('Order creation failed:', error);
-      setErrors({ form: 'Failed to create order. Please try again.' });
-    } finally {
+      openPayment({
+        amountInr: totalAmount,
+        receipt: `store_${Date.now()}`,
+        description: `Order from ${cart.storeName} (${cart.items.length} items)`,
+        notes: {
+          flow: 'marketplace_store',
+          storeSlug: cart.storeSlug,
+          storeName: cart.storeName,
+          paymentMethod,
+          customerName: formData.name,
+          customerPhone: formData.phone,
+          customerAddress: `${formData.houseNumber}, ${formData.addressLine}`,
+        },
+        prefill: {
+          name: formData.name,
+          contact: formData.phone.startsWith('+91') ? formData.phone : `+91${formData.phone}`,
+        },
+        onSuccess: ({ paymentId, orderId }) => {
+          clearCart();
+          router.push(`/order/${orderId || trackingToken}?paymentId=${paymentId}`);
+        },
+        onError: (err) => {
+          setLoading(false);
+          if (err === 'Payment cancelled') {
+            return;
+          }
+          console.warn('[Checkout] Payment error:', err);
+          setErrors({
+            form: `Payment Error: ${err}. You can also choose Cash on Delivery (COD) to place your order now.`,
+          });
+        },
+      });
+    } catch (err: any) {
       setLoading(false);
+      setErrors({
+        form: err?.message || 'Unable to initialize online payment. Please try Cash on Delivery.',
+      });
     }
   };
 
@@ -266,26 +326,155 @@ export default function CheckoutForm() {
               </div>
             </div>
 
-            {/* Payment Method */}
+            {/* Payment Method Section */}
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-gray-900">
-                <CreditCard className="h-5 w-5 text-orange-600" />
-                Payment Method
+              <h2 className="mb-4 flex items-center justify-between text-xl font-semibold text-gray-900">
+                <span className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-orange-600" />
+                  Select Payment Method
+                </span>
+                <span className="flex items-center gap-1 text-xs font-normal text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  100% Secure Checkout
+                </span>
               </h2>
-              <div className="rounded-lg border-2 border-orange-500 bg-orange-50 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-gray-900">Online Payment</p>
-                    <p className="text-sm text-gray-600">Pay securely via Razorpay</p>
+
+              <div className="space-y-3">
+                {/* 1. UPI Payment Option (Default / Primary) */}
+                <label
+                  onClick={() => setPaymentMethod('upi')}
+                  className={`block cursor-pointer rounded-xl border-2 p-4 transition-all ${
+                    paymentMethod === 'upi'
+                      ? 'border-orange-500 bg-orange-50/60 shadow-sm'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="upi"
+                        checked={paymentMethod === 'upi'}
+                        onChange={() => setPaymentMethod('upi')}
+                        className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">UPI</span>
+                          <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] font-bold text-emerald-800">
+                            Fastest & Zero Fee
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-sm text-gray-600">
+                          Google Pay, PhonePe, Paytm, BHIM, CRED & any UPI App / QR
+                        </p>
+                        {/* UPI Brand Badges */}
+                        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs font-semibold">
+                          <span className="rounded-md border border-gray-200 bg-white px-2 py-0.5 text-gray-700 shadow-xs">
+                            GPay
+                          </span>
+                          <span className="rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 text-purple-700 shadow-xs">
+                            PhonePe
+                          </span>
+                          <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-0.5 text-sky-700 shadow-xs">
+                            Paytm
+                          </span>
+                          <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-emerald-800 shadow-xs">
+                            BHIM UPI
+                          </span>
+                          <span className="rounded-md border border-orange-200 bg-orange-100/60 px-2 py-0.5 text-orange-800 shadow-xs">
+                            Scan QR
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {paymentMethod === 'upi' && (
+                      <span className="flex items-center gap-1 text-xs font-bold text-orange-600">
+                        <CheckCircle className="h-4 w-4" />
+                        Selected
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-green-600">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Recommended</span>
+                </label>
+
+                {/* 2. Cards & NetBanking */}
+                <label
+                  onClick={() => setPaymentMethod('cards')}
+                  className={`block cursor-pointer rounded-xl border-2 p-4 transition-all ${
+                    paymentMethod === 'cards'
+                      ? 'border-orange-500 bg-orange-50/60 shadow-sm'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="cards"
+                        checked={paymentMethod === 'cards'}
+                        onChange={() => setPaymentMethod('cards')}
+                        className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">Cards & Net Banking</span>
+                        </div>
+                        <p className="mt-0.5 text-sm text-gray-600">
+                          Visa, MasterCard, RuPay Debit/Credit Cards & Net Banking via Razorpay
+                        </p>
+                      </div>
+                    </div>
+                    {paymentMethod === 'cards' && (
+                      <span className="flex items-center gap-1 text-xs font-bold text-orange-600">
+                        <CheckCircle className="h-4 w-4" />
+                        Selected
+                      </span>
+                    )}
                   </div>
-                </div>
+                </label>
+
+                {/* 3. Cash on Delivery (COD) */}
+                <label
+                  onClick={() => setPaymentMethod('cod')}
+                  className={`block cursor-pointer rounded-xl border-2 p-4 transition-all ${
+                    paymentMethod === 'cod'
+                      ? 'border-orange-500 bg-orange-50/60 shadow-sm'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="cod"
+                        checked={paymentMethod === 'cod'}
+                        onChange={() => setPaymentMethod('cod')}
+                        className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">Cash on Delivery (Pay on Delivery)</span>
+                        </div>
+                        <p className="mt-0.5 text-sm text-gray-600">
+                          Pay cash or scan UPI QR code with delivery partner upon arrival
+                        </p>
+                      </div>
+                    </div>
+                    {paymentMethod === 'cod' && (
+                      <span className="flex items-center gap-1 text-xs font-bold text-orange-600">
+                        <CheckCircle className="h-4 w-4" />
+                        Selected
+                      </span>
+                    )}
+                  </div>
+                </label>
               </div>
-              <p className="mt-3 text-sm text-gray-500">
-                Prepaid orders only. Cash on delivery not available.
+
+              <p className="mt-3 text-xs text-gray-500">
+                🔒 All transactions are encrypted and secured with RBI-compliant payment standard.
               </p>
             </div>
 
@@ -299,9 +488,15 @@ export default function CheckoutForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-full bg-orange-500 py-4 font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+              className="w-full rounded-full bg-orange-500 py-4 font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition-colors shadow-md"
             >
-              {loading ? 'Processing...' : `Pay ₹${totalWithDelivery}`}
+              {loading
+                ? 'Processing...'
+                : paymentMethod === 'upi'
+                  ? `Pay ₹${totalWithDelivery} via UPI`
+                  : paymentMethod === 'cards'
+                    ? `Pay ₹${totalWithDelivery} Online`
+                    : `Place Order (Cash on Delivery) • ₹${totalWithDelivery}`}
             </button>
           </form>
         </div>
